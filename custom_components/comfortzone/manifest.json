@@ -1,0 +1,12 @@
+{
+  "domain": "comfortzone",
+  "name": "Comfortzone Heat Pump",
+  "documentation": "https://github.com/tenganmade/comfortzone_heat_pump",
+  "dependencies": [],
+  "codeowners": [],
+  "requirements": ["aiohttp>=3.8.0"],
+  "iot_class": "cloud_polling",
+  "version": "2.0.0",
+  "config_flow": true,
+  "issue_tracker": "https://github.com/tenganmade/comfortzone_heat_pump/issues"
+}
