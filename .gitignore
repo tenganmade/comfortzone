@@ -1,0 +1,6 @@
+old/
+__pycache__/
+.vscode/
+*.log
+.env
+tools/sample_response.json

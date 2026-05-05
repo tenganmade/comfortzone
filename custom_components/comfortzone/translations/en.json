@@ -1,0 +1,34 @@
+{
+    "config": {
+        "step": {
+            "user": {
+                "title": "Comfortzone Heat Pump Setup",
+                "description": "Please enter your Loggamera credentials to integrate your Comfortzone heat pump.\n\n**Where to find this information?**\n1. Log in to your [Loggamera portal](https://portal.loggamera.se).\n2. Navigate to your device settings.\n3. Locate the **Device ID** (usually a number).\n4. Generate or copy your **API Key**.\n\nSelect your pump model. You can change this later.",
+                "data": {
+                    "api_key": "Loggamera API Key",
+                    "device_id": "Loggamera Device ID",
+                    "model": "Heat Pump Model"
+                }
+            }
+        },
+        "error": {
+            "cannot_connect": "Unable to establish a connection to the Loggamera API. Please check your network connection and ensure Loggamera services are online.",
+            "invalid_auth": "Authentication failed. Please verify that your API Key and Device ID are correct.",
+            "unknown": "An unexpected error occurred during validation. Please check the Home Assistant logs for more details."
+        },
+        "abort": {
+            "already_configured": "A Comfortzone Heat Pump with this Device ID is already configured in Home Assistant."
+        }
+    },
+    "options": {
+        "step": {
+            "init": {
+                "title": "Comfortzone Heat Pump Options",
+                "description": "Adjust the integration options.",
+                "data": {
+                    "model": "Heat Pump Model"
+                }
+            }
+        }
+    }
+}
