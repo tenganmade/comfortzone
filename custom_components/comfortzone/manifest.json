@@ -1,7 +1,7 @@
 {
   "domain": "comfortzone",
   "name": "Comfortzone Heat Pump",
-  "documentation": "https://github.com/tenganmade/comfortzone_heat_pump",
+  "documentation": "https://github.com/tenganmade/comfortzone",
   "dependencies": [],
   "codeowners": ["@tenganmade"],
   "requirements": [],
@@ -10,5 +10,5 @@
   "version": "2.0.0",
   "config_flow": true,
   "quality_scale": "silver",
-  "issue_tracker": "https://github.com/tenganmade/comfortzone_heat_pump/issues"
+  "issue_tracker": "https://github.com/tenganmade/comfortzone/issues"
 }
