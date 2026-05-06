@@ -65,7 +65,7 @@
 
 [![Open your Home Assistant instance and start setting up a new integration.](https://my.home-assistant.io/badges/config_flow_start.svg)](https://my.home-assistant.io/redirect/config_flow_start/?domain=comfortzone)
 
-> 💡 **Klicka på knappen** för att hoppa direkt till "Add Integration"-dialogen — den är förifylld med rätt domän.
+> 💡 **Klicka på knappen** för att hoppa direkt till "Add Integration"-dialogen i Home Assistant.
 
 Eller lägg till den manuellt: **Inställningar → Enheter & tjänster → + Lägg till integration → Comfortzone Heat Pump**.
 
