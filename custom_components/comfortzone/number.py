@@ -31,7 +31,7 @@ NUMBER_ENTITIES_CONFIG = [
         "icon": "mdi:water-boiler",
         "unit": UnitOfTemperature.CELSIUS,
         "min": 30.0,
-        "max": 65.0,
+        "max": 60.0,
         "step": 1.0,
         "mode": NumberMode.BOX,
         "entity_category": EntityCategory.CONFIG,

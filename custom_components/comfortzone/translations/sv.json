@@ -3,21 +3,21 @@
         "step": {
             "user": {
                 "title": "Anslut din Comfortzone-värmepump",
-                "description": "Integrationen läser av och styr din värmepump via **Loggamera**s moln-API.\n\n**Det här behöver du innan du fortsätter:**\n\n1. 🔑 **API-nyckel** — logga in på [Loggamera-portalen](https://platform.loggamera.se), öppna dina kontoinställningar och generera eller kopiera en API-nyckel.\n2. 🔢 **Enhets-ID** — öppna din värmepump i portalen och kopiera det numeriska ID:t (syns i URL:en eller enhetens detaljer).\n3. 🏷️ **Modell** — välj `RX95` för en Comfortzone RX95 (eller `Other`). Kan ändras senare.\n\nIntegrationen pollar varje minut. Första uppdateringen efter installationen kan ta några sekunder eftersom Loggameras API ibland är långsamt.",
+                "description": "Integrationen läser av och styr din värmepump via **Loggamera**s moln-API.\n\n**Det här behöver du innan du fortsätter:**\n\n1. 🔑 **API-nyckel & Enhets-ID** — logga in på [Loggamera-portalen](https://portal.loggamera.se), gå till **Inställningar - API** ([https://portal.loggamera.se/ApiSettings/Index/](https://portal.loggamera.se/ApiSettings/Index/)) för att hitta både din API-nyckel och det numeriska enhets-ID:t för din värmepump.\n2. 🏷️ **Modell** — välj `RX95` för en Comfortzone RX95 (eller `Other`). Kan ändras senare.\n\nIntegrationen pollar varje minut. Första uppdateringen efter installationen kan ta några sekunder eftersom Loggameras API ibland är långsamt.",
                 "data": {
                     "api_key": "Loggamera API-nyckel",
                     "device_id": "Loggamera Enhets-ID",
                     "model": "Värmepumpsmodell"
                 },
                 "data_description": {
-                    "api_key": "Genereras under ditt Loggamera-konto → API-nycklar.",
-                    "device_id": "Det numeriska ID:t för din värmepump i Loggamera.",
+                    "api_key": "Hittas under Inställningar - API på ditt Loggamera-konto.",
+                    "device_id": "Det numeriska ID:t för din värmepump, hittas under Inställningar - API.",
                     "model": "Används för märke och framtida modellspecifik logik."
                 }
             }
         },
         "error": {
-            "cannot_connect": "Kunde inte nå Loggamera-API:t. Kontrollera din internetanslutning och att platform.loggamera.se är online, försök sedan igen.",
+            "cannot_connect": "Kunde inte nå Loggamera-API:t. Kontrollera din internetanslutning och att portal.loggamera.se är online, försök sedan igen.",
             "invalid_auth": "Autentisering misslyckades. Dubbelkolla API-nyckeln och Enhets-ID:t — båda måste tillhöra samma Loggamera-konto.",
             "unknown": "Något oväntat hände under valideringen. Se Home Assistants loggar för mer information."
         },

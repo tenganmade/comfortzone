@@ -4,14 +4,15 @@
 
 # Comfortzone Heat Pump
 
-**Smart Home Assistant-integration för Comfortzone frånluftsvärmepumpar via Loggamera-API:t.**
+**Smart Home Assistant-integration för Comfortzone frånluftsvärmepumpar via Loggamera-API:t.**  
+*(English documentation below)*
 
 [![HACS][hacs-badge]][hacs-url]
 [![Version][version-badge]][release-url]
 [![License][license-badge]][license-url]
 [![Home Assistant][ha-badge]][ha-url]
 
-[Installera](#-installation) · [Konfiguration](#%EF%B8%8F-konfiguration) · [Entiteter](#-entiteter) · [Dashboards](#-dashboard-exempel) · [Felsökning](#-felsökning)
+[Installera](#-installation) · [Konfiguration](#%EF%B8%8F-konfiguration) · [Entiteter](#-entiteter) · [Felsökning](#-felsökning) | [English](#-english-documentation)
 
 </div>
 
@@ -28,7 +29,7 @@
 | 🎚️ **Värmekurva** | Justera värmekurva och semester­dagar direkt från dashboarden. |
 | 🛡️ **Smart kö** | Inbyggd kö och retry hanterar långsam Loggamera-API utan att krascha integrationen. |
 | 🇸🇪 **Svensk översättning** | Hela konfigurations­flödet på svenska. |
-| 🩺 **Diagnostik** | Inbyggd "Download Diagnostics" med redacted API-nyckel — perfekt för bug-rapporter. |
+| 🩺 **Diagnostik** | Inbyggd "Download Diagnostics" med dold API-nyckel — perfekt för bug-rapporter. |
 
 ---
 
@@ -38,7 +39,7 @@
 
 [![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=tenganmade&repository=comfortzone&category=integration)
 
-> 💡 **Klicka knappen ovan** för att öppna HACS direkt i din Home Assistant och förhandsgranska repot. Klicka sedan **DOWNLOAD**.
+> 💡 **Klicka på knappen ovan** för att öppna HACS direkt i din Home Assistant och förhandsgranska repot. Klicka därefter på **DOWNLOAD**.
 
 <details>
 <summary>📖 Manuell HACS-installation (om knappen inte fungerar)</summary>
@@ -46,7 +47,7 @@
 1. Öppna **HACS** i Home Assistant.
 2. Klicka på **⋮** (tre prickar) uppe till höger → **Custom repositories**.
 3. Klistra in `https://github.com/tenganmade/comfortzone` och välj kategori **Integration**.
-4. Klicka **ADD**, sök sedan upp *Comfortzone Heat Pump* i listan och tryck **DOWNLOAD**.
+4. Klicka på **ADD**, sök sedan upp *Comfortzone Heat Pump* i listan och tryck **DOWNLOAD**.
 5. **Starta om Home Assistant.**
 
 </details>
@@ -64,28 +65,28 @@
 
 [![Open your Home Assistant instance and start setting up a new integration.](https://my.home-assistant.io/badges/config_flow_start.svg)](https://my.home-assistant.io/redirect/config_flow_start/?domain=comfortzone)
 
-> 💡 **Klicka knappen** för att hoppa direkt till "Add Integration"-dialogen — den är förifylld med rätt domän.
+> 💡 **Klicka på knappen** för att hoppa direkt till "Add Integration"-dialogen — den är förifylld med rätt domän.
 
-Eller manuellt: **Inställningar → Enheter & tjänster → + Lägg till integration → Comfortzone Heat Pump**.
+Eller lägg till den manuellt: **Inställningar → Enheter & tjänster → + Lägg till integration → Comfortzone Heat Pump**.
 
 ---
 
 ## ⚙️ Konfiguration
 
-Du behöver två uppgifter från [Loggamera-portalen](https://platform.loggamera.se):
+Du behöver två uppgifter från [Loggamera-portalen](https://portal.loggamera.se/):
 
 | Fält | Var hittar jag det? |
 | :-- | :-- |
-| **API-nyckel** | Loggamera-portalen → ditt konto → *API-nycklar* → generera/kopiera. |
-| **Enhets-ID** | Loggamera-portalen → välj din värmepump → ID:t står i URL eller enhetsdetaljer (ett heltal). |
-| **Modell** | Välj `RX95` (eller `Other` om du har en annan modell). Kan ändras senare. |
+| **API-nyckel** | Gå till **Inställningar - API** i Loggamera-portalen ([portal.loggamera.se/ApiSettings/Index/](https://portal.loggamera.se/ApiSettings/Index/)) och generera eller kopiera din nyckel. |
+| **Enhets-ID** | Hittas på samma sida under **Inställningar - API** (det är ett numeriskt ID, t.ex. `12345`). |
+| **Modell** | Välj `RX95` (eller `Other` om du har en annan modell). Detta kan ändras i efterhand. |
 
 ```mermaid
 flowchart LR
     A[Klicka<br/>Add Integration] --> B[Ange API-nyckel<br/>+ Device ID]
     B --> C{Validering<br/>mot Loggamera}
     C -->|OK| D[✅ Klar — entiteter<br/>skapas automatiskt]
-    C -->|Fel auth| E[❌ Kontrollera<br/>API-nyckel]
+    C -->|Fel auth| E[❌ Kontrollera<br/>uppgifter]
     C -->|Tidsgräns| F[⚠️ Försök igen<br/>API är ibland långsamt]
 ```
 
@@ -99,7 +100,7 @@ flowchart LR
 | Entitet | Typ | Beskrivning |
 | :-- | :-- | :-- |
 | `climate.comfortzone_climate` | Climate | Inomhus­temperatur, HEAT/OFF, HVAC-action |
-| `number.comfortzone_hot_water_temp_setpoint` | Number | Börvärde varmvatten (30–65°C) |
+| `number.comfortzone_hot_water_temp_setpoint` | Number | Börvärde varmvatten (30–60°C) |
 | `number.comfortzone_heat_curve` | Number | Värmekurva (0,0–6,0) |
 | `number.comfortzone_holiday_reduction_days` | Number | Semesterdagar (0–9) |
 | `switch.comfortzone_hot_water_extra` | Switch | Extra varmvatten |
@@ -131,42 +132,86 @@ flowchart LR
 
 ---
 
-## 🎨 Dashboard-exempel
-
-Se [docs/dashboard_examples.md](docs/dashboard_examples.md) för färdiga Lovelace-kort:
-
-- 🎛️ **Översikt** — klimat, varmvatten, larm i ett kort.
-- 📈 **Energi** — kompressoreffekt + tillsats över tid.
-- ❄️ **Avfrostning** — defrost-intervall och blocktid.
-
----
-
 ## 🩺 Felsökning
 
 | Symptom | Trolig orsak | Lösning |
 | :-- | :-- | :-- |
-| `cannot_connect` vid setup | Loggamera långsamt eller offline | Vänta 1–2 min och försök igen. Integrationen retry:ar automatiskt vid drift. |
-| `invalid_auth` | Fel API-nyckel/Device-ID | Verifiera båda i Loggamera-portalen. |
-| Entiteter "unavailable" tillfälligt | API rapporterar `busy` | Normal — gammal data behålls och nästa polling fyller på. |
-| Vissa sensorer saknar värde | Modellen rapporterar inte fältet | Vissa fält finns bara på vissa modeller (T.ex. `defrost_*`). |
+| `cannot_connect` vid setup | Loggamera långsamt eller offline | Vänta 1–2 min och försök igen. Integrationen försöker på nytt automatiskt vid drift. |
+| `invalid_auth` | Fel API-nyckel/Device-ID | Verifiera båda i Loggamera-portalen under *Inställningar - API*. |
+| Entiteter "unavailable" tillfälligt | API rapporterar `busy` | Helt normalt — gammal data behålls och nästa polling fyller på med ny. |
+| Vissa sensorer saknar värde | Modellen rapporterar inte fältet | Vissa fält finns bara på specifika modeller (T.ex. `defrost_*`). |
 
-**Ladda diagnostik:** *Inställningar → Enheter & tjänster → Comfortzone Heat Pump → ⋮ → Download diagnostics*. API-nyckel och Device-ID är redacted automatiskt.
+**Ladda diagnostik:** *Inställningar → Enheter & tjänster → Comfortzone Heat Pump → ⋮ → Download diagnostics*. API-nyckel och Device-ID rensas automatiskt för din integritet.
 
 ---
 
-## 🤝 Bidrag
+<br><br>
 
-PR:s, issue-rapporter och dashboard-exempel är välkomna! Öppna en [issue][issues-url] eller skicka en pull request.
+# 🇬🇧 English Documentation
 
-## 📝 Licens
+**Smart Home Assistant integration for Comfortzone exhaust air heat pumps via the Loggamera API.**
 
-[Apache License 2.0][license-url] © Tengan Made
+## ✨ Features
+- **Climate Entity:** Control indoor temperature, read compressor and valve states.
+- **Hot Water:** Adjust target temperature, activate extra hot water.
+- **24+ Sensors:** Indoor, outdoor, exhaust air, compressor power, frequency, fan speed, etc.
+- **Alarms & Status:** Filter alarm, main alarm, compressor status, valve positions (binary sensors).
+- **Settings:** Adjust heating curve and holiday days directly from your dashboard.
+- **Smart Queuing:** Built-in write queue to handle the slow Loggamera API smoothly without crashing the integration.
+- **Diagnostics:** Built-in "Download Diagnostics" with redacted API key for easy bug reporting.
+
+## 🚀 Installation
+
+### Step 1 — Add repository to HACS
+
+[![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=tenganmade&repository=comfortzone&category=integration)
+
+> 💡 **Click the button above** to open HACS directly in your Home Assistant and preview the repository. Then click **DOWNLOAD**.
+
+If you prefer a manual installation, simply copy the `custom_components/comfortzone/` directory to your `<config>/custom_components/` folder and restart Home Assistant.
+
+### Step 2 — Add the integration
+
+[![Open your Home Assistant instance and start setting up a new integration.](https://my.home-assistant.io/badges/config_flow_start.svg)](https://my.home-assistant.io/redirect/config_flow_start/?domain=comfortzone)
+
+> 💡 **Click the button** to jump straight to the "Add Integration" dialogue in Home Assistant.
+
+Or add it manually: **Settings → Devices & Services → + Add Integration → Comfortzone Heat Pump**.
+
+## ⚙️ Configuration
+
+You will need two pieces of information from the [Loggamera portal](https://portal.loggamera.se/):
+
+| Field | Where to find it |
+| :-- | :-- |
+| **API key** | Navigate to **Settings - API** in the Loggamera portal ([portal.loggamera.se/ApiSettings/Index/](https://portal.loggamera.se/ApiSettings/Index/)) and generate or copy your key. |
+| **Device ID** | Found on the exact same page under **Settings - API** (it is a numeric ID, e.g. `12345`). |
+| **Model** | Select `RX95` (or `Other` if you have a different model). This can be changed later. |
+
+## 🩺 Troubleshooting
+
+- **`cannot_connect` during setup:** The Loggamera API might be slow or temporarily offline. Wait a minute and try again.
+- **`invalid_auth`:** Double-check your API key and Device ID in the Loggamera portal.
+- **Entities temporarily "unavailable":** The API sometimes returns a `busy` status. This is normal and the integration will automatically retry on the next poll cycle.
+- **Missing sensor values:** Some models do not report certain data fields (e.g. `defrost_*`).
+
+---
+
+## 🤝 Bidrag / Contributions
+
+PR:s, issue-rapporter och dashboard-exempel är välkomna! Öppna en [issue][issues-url] eller skicka en pull request.  
+*PRs and issues are welcome!*
+
+## 📝 Licens / License
+
+[Apache License 2.0][license-url]
 
 ---
 
 <div align="center">
 
-Inte affilierad med Comfortzone Industri AB eller Loggamera AB.
+Inte affilierad med Comfortzone AB eller Loggamera AB.  
+*Not affiliated with Comfortzone AB or Loggamera AB.*
 
 </div>
 
