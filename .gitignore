@@ -1,8 +1,22 @@
-old/
+# Python
 __pycache__/
+*.pyc
+
+# IDE & Editor
 .vscode/
+.idea/
+*.swp
+.claude/
+
+# Logs and secrets
 *.log
 .env
-tools/sample_response.json
 secrets.local.json
+
+# Old / temporary files
+old/
 old_controller.yaml
+
+# Project documentation & tools (Not needed for HACS integration)
+docs/
+tools/
