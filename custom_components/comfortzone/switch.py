@@ -17,8 +17,14 @@ from .api import (
     ComfortzoneApiCommandError,
     find_value_from_raw_data,
 )
-from .const import CLEAR_TEXT_NAMES, DELAY_REFRESH_AFTER_SET, DOMAIN
-from .entity import build_device_info, device_unique_id
+from .calculations import is_truthy
+from .const import (
+    CLEAR_TEXT_NAMES,
+    DELAY_REFRESH_AFTER_SET,
+    DELAY_REFRESH_FOLLOWUP,
+    DOMAIN,
+)
+from .entity import OptimisticConfirmedMixin, build_device_info, device_unique_id
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -58,7 +64,7 @@ async def async_setup_entry(
     async_add_entities(entities)
 
 
-class ComfortzoneSwitchEntity(CoordinatorEntity, SwitchEntity):
+class ComfortzoneSwitchEntity(OptimisticConfirmedMixin, CoordinatorEntity, SwitchEntity):
     """Representation of a Comfortzone Switch entity."""
 
     _attr_has_entity_name = True
@@ -119,7 +125,17 @@ class ComfortzoneSwitchEntity(CoordinatorEntity, SwitchEntity):
             if value_str is None:
                 new_availability = False
             else:
-                new_state = value_str == self._read_on_value
+                # Float-tolerant: API can return "1" or "1.0" interchangeably.
+                if str(self._read_on_value) == "1":
+                    api_state = is_truthy(value_str)
+                else:
+                    api_state = str(value_str).strip() == str(self._read_on_value)
+                # Honour an in-flight optimistic write so the UI doesn't flicker
+                # if the coordinator polls before the API has caught up.
+                if self._consume_optimistic(api_state):
+                    new_state = api_state
+                else:
+                    new_state = self._attr_is_on
 
         self._attr_available = new_availability
         self._attr_is_on = new_state if new_availability else None
@@ -144,8 +160,11 @@ class ComfortzoneSwitchEntity(CoordinatorEntity, SwitchEntity):
             success = await self._client.async_set_property(prop_set, api_value)
             if success:
                 self._attr_is_on = expected_state
+                self._record_optimistic(expected_state)
                 self.async_write_ha_state()
+                # Refresh quickly first, then again as a safety net for slow API.
                 async_call_later(self.hass, DELAY_REFRESH_AFTER_SET, self._delayed_refresh)
+                async_call_later(self.hass, DELAY_REFRESH_FOLLOWUP, self._delayed_refresh)
             else:
                 _LOGGER.error("Failed to set %s via API", self.name)
         except (ComfortzoneApiCommandError, ComfortzoneApiClientError) as err:

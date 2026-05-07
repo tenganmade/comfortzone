@@ -17,9 +17,10 @@ secrets.local.json
 old/
 old_controller.yaml
 
-# Project documentation & tools (Not needed for HACS integration)
+# Project documentation, tools & tests (Not needed for HACS integration)
 docs/
 tools/
+tests/
 
 # Test caches
 .pytest_cache/

@@ -358,29 +358,36 @@ class ComfortzoneSensorEntity(CoordinatorEntity, SensorEntity):
                     _LOGGER.debug("Property '%s' missing for %s", prop_read, self.name)
                     new_availability = False
                 else:
+                    # The Loggamera API may return numeric values either as
+                    # plain integers ("70") or as decimals ("70.0", "21.7")
+                    # depending on the field and firmware version. Parse
+                    # everything as float and let HA's display precision
+                    # decide how to render it.
                     try:
-                        if self.device_class == SensorDeviceClass.TEMPERATURE:
-                            new_value = float(value_str)
-                        elif self.device_class == SensorDeviceClass.TIMESTAMP:
+                        if self.device_class == SensorDeviceClass.TIMESTAMP:
                             parsed = dt_util.parse_datetime(value_str)
                             assert parsed is not None
                             new_value = parsed
-                        elif self.device_class == SensorDeviceClass.POWER:
-                            new_value = int(value_str)
-                        elif self.device_class == SensorDeviceClass.FREQUENCY:
-                            new_value = int(value_str)
-                        elif self.native_unit_of_measurement == PERCENTAGE:
-                            new_value = int(float(value_str))
-                        elif self.native_unit_of_measurement == UnitOfTime.DAYS:
-                            new_value = int(value_str)
+                        elif self.device_class in (
+                            SensorDeviceClass.TEMPERATURE,
+                            SensorDeviceClass.POWER,
+                            SensorDeviceClass.FREQUENCY,
+                            SensorDeviceClass.ENERGY,
+                            SensorDeviceClass.DURATION,
+                        ):
+                            new_value = float(value_str)
+                        elif self.native_unit_of_measurement in (
+                            PERCENTAGE,
+                            UnitOfTime.DAYS,
+                            UnitOfTime.MINUTES,
+                            UnitOfTime.HOURS,
+                        ):
+                            new_value = float(value_str)
                         elif (
                             self.native_unit_of_measurement is None
                             and self._attr_state_class == SensorStateClass.MEASUREMENT
                         ):
-                            try:
-                                new_value = int(value_str)
-                            except ValueError:
-                                new_value = float(value_str)
+                            new_value = float(value_str)
                         else:
                             new_value = value_str
                     except (ValueError, TypeError, AssertionError):

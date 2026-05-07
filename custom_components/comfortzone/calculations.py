@@ -121,25 +121,39 @@ def compute_addition_w(values: Optional[Iterable[Any]]) -> float:
 # --- Operating-mode predicates --------------------------------------------
 
 
+def is_truthy(value: Optional[str]) -> bool:
+    """Liberal truthiness check for API string values.
+
+    The Loggamera API normally reports booleans as ``"0"`` / ``"1"`` but it
+    has been observed to occasionally return ``"1.0"``, ``"0.0"`` or even
+    free-form strings. This helper accepts any of those forms by coercing
+    to ``float`` first and falling back to common keyword strings.
+    """
+    if value is None:
+        return False
+    try:
+        return float(value) != 0.0
+    except (TypeError, ValueError):
+        return str(value).strip().lower() in ("true", "yes", "on")
+
+
 def compressor_active(values: Optional[Iterable[Any]]) -> bool:
     """True when the heat pump's compressor is reported as running."""
-    return find_value_from_raw_data(
-        values, CLEAR_TEXT_NAMES["COMPRESSOR_ACTIVE"]
-    ) == "1"
+    return is_truthy(find_value_from_raw_data(values, CLEAR_TEXT_NAMES["COMPRESSOR_ACTIVE"]))
 
 
 def heating_valve_open(values: Optional[Iterable[Any]]) -> bool:
     """True when the exchange valve is routed to space heating."""
-    return find_value_from_raw_data(
-        values, CLEAR_TEXT_NAMES["EXCHANGE_VALVE_HEATING"]
-    ) == "1"
+    return is_truthy(
+        find_value_from_raw_data(values, CLEAR_TEXT_NAMES["EXCHANGE_VALVE_HEATING"])
+    )
 
 
 def hw_valve_open(values: Optional[Iterable[Any]]) -> bool:
     """True when the exchange valve is routed to hot water production."""
-    return find_value_from_raw_data(
-        values, CLEAR_TEXT_NAMES["EXCHANGE_VALVE_HW"]
-    ) == "1"
+    return is_truthy(
+        find_value_from_raw_data(values, CLEAR_TEXT_NAMES["EXCHANGE_VALVE_HW"])
+    )
 
 
 def is_heating(values: Optional[Iterable[Any]]) -> bool:

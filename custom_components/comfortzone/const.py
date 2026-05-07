@@ -38,8 +38,16 @@ MIN_ELECTRICAL_FOR_COP_W = 100
 # Target temp value used to signify "OFF" mode for the climate entity
 TEMP_VALUE_FOR_OFF = 10.0
 
-# Delay in seconds before refreshing coordinator after a successful 'set' command
-DELAY_REFRESH_AFTER_SET = 20
+# Delay in seconds before the *first* coordinator refresh after a successful
+# 'set' command. A shorter value gives the user near-instant feedback that the
+# write actually took effect on the device. The OptimisticConfirmedMixin keeps
+# the entity showing the user-written value until the API confirms it, so a
+# short delay won't cause UI flicker even if the API hasn't propagated the
+# change yet at the first poll.
+DELAY_REFRESH_AFTER_SET = 5
+# Schedule a follow-up refresh this many seconds after a write to catch
+# slower API propagations.
+DELAY_REFRESH_FOLLOWUP = 15
 
 # ClearTextNames needed for parsing RawData
 CLEAR_TEXT_NAMES = {

@@ -20,6 +20,7 @@ from homeassistant.util import dt as dt_util
 from .calculations import (
     find_value_from_raw_data,
     is_hot_water as _is_hot_water,
+    is_truthy,
     read_float as _read_float,
 )
 from .computed_sensors import _coordinator_values
@@ -195,7 +196,12 @@ class ComfortzoneBinarySensorEntity(CoordinatorEntity, BinarySensorEntity):
             elif self._property_read == CLEAR_TEXT_NAMES["ALARM_TEXT"]:
                 new_state = value_str != ""
             elif self._on_value is not None:
-                new_state = value_str == self._on_value
+                # Use the same float-tolerant truthiness check as elsewhere:
+                # the API can deliver "1" / "1.0" / "0.0" interchangeably.
+                if str(self._on_value) == "1":
+                    new_state = is_truthy(value_str)
+                else:
+                    new_state = str(value_str).strip() == str(self._on_value)
             else:
                 new_state = False
 

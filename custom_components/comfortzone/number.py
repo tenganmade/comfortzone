@@ -17,8 +17,13 @@ from .api import (
     ComfortzoneApiCommandError,
     find_value_from_raw_data,
 )
-from .const import CLEAR_TEXT_NAMES, DELAY_REFRESH_AFTER_SET, DOMAIN
-from .entity import build_device_info, device_unique_id
+from .const import (
+    CLEAR_TEXT_NAMES,
+    DELAY_REFRESH_AFTER_SET,
+    DELAY_REFRESH_FOLLOWUP,
+    DOMAIN,
+)
+from .entity import OptimisticConfirmedMixin, build_device_info, device_unique_id
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -88,7 +93,7 @@ async def async_setup_entry(
     async_add_entities(entities)
 
 
-class ComfortzoneNumberEntity(CoordinatorEntity, NumberEntity):
+class ComfortzoneNumberEntity(OptimisticConfirmedMixin, CoordinatorEntity, NumberEntity):
     """Representation of a Comfortzone Number entity."""
 
     _attr_has_entity_name = True
@@ -157,11 +162,18 @@ class ComfortzoneNumberEntity(CoordinatorEntity, NumberEntity):
                 new_availability = False
             else:
                 try:
-                    if self.native_unit_of_measurement == UnitOfTime.DAYS:
-                        value_num = int(value_str)
+                    # Always parse as float — the API may report integer-looking
+                    # values like "9.0" for fields we expect as plain ints.
+                    value_num = float(value_str)
+                    api_value = max(
+                        self.native_min_value, min(self.native_max_value, value_num)
+                    )
+                    if self._consume_optimistic(api_value):
+                        new_value = api_value
                     else:
-                        value_num = float(value_str)
-                    new_value = max(self.native_min_value, min(self.native_max_value, value_num))
+                        # Hold the optimistic value until the API catches up
+                        # so the UI doesn't flicker after a write.
+                        new_value = self._attr_native_value
                 except (TypeError, ValueError):
                     _LOGGER.warning(
                         "Could not parse number value for %s: '%s'", self.name, value_str
@@ -186,8 +198,10 @@ class ComfortzoneNumberEntity(CoordinatorEntity, NumberEntity):
             success = await self._client.async_set_property(prop_set, value_to_send)
             if success:
                 self._attr_native_value = clamped
+                self._record_optimistic(clamped)
                 self.async_write_ha_state()
                 async_call_later(self.hass, DELAY_REFRESH_AFTER_SET, self._delayed_refresh)
+                async_call_later(self.hass, DELAY_REFRESH_FOLLOWUP, self._delayed_refresh)
             else:
                 _LOGGER.error("Failed to set %s via API", self.name)
         except (ComfortzoneApiCommandError, ComfortzoneApiClientError) as err:

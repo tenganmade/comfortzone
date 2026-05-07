@@ -23,8 +23,15 @@ from .api import (
     ComfortzoneApiCommandError,
     find_value_from_raw_data,
 )
-from .const import CLEAR_TEXT_NAMES, DELAY_REFRESH_AFTER_SET, DOMAIN, TEMP_VALUE_FOR_OFF
-from .entity import build_device_info, device_unique_id
+from .calculations import is_truthy
+from .const import (
+    CLEAR_TEXT_NAMES,
+    DELAY_REFRESH_AFTER_SET,
+    DELAY_REFRESH_FOLLOWUP,
+    DOMAIN,
+    TEMP_VALUE_FOR_OFF,
+)
+from .entity import OptimisticConfirmedMixin, build_device_info, device_unique_id
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -49,7 +56,7 @@ async def async_setup_entry(
     async_add_entities([ComfortzoneRX95ClimateEntity(coordinator, entry, api_client)])
 
 
-class ComfortzoneRX95ClimateEntity(CoordinatorEntity, ClimateEntity):
+class ComfortzoneRX95ClimateEntity(OptimisticConfirmedMixin, CoordinatorEntity, ClimateEntity):
     """Representation of a Comfortzone Heat Pump."""
 
     _attr_has_entity_name = True
@@ -132,7 +139,16 @@ class ComfortzoneRX95ClimateEntity(CoordinatorEntity, ClimateEntity):
                 try:
                     if target_temp_str is not None:
                         target_temp_api = float(target_temp_str)
-                        new_target = max(self.min_temp, min(self.max_temp, target_temp_api))
+                        clamped_api_target = max(
+                            self.min_temp, min(self.max_temp, target_temp_api)
+                        )
+                        # Honour optimistic write so the UI doesn't bounce
+                        # back to a stale API target before the device has
+                        # processed our change.
+                        if self._consume_optimistic(clamped_api_target):
+                            new_target = clamped_api_target
+                        else:
+                            new_target = self._attr_target_temperature
                     else:
                         new_availability = False
                 except (ValueError, TypeError):
@@ -148,10 +164,10 @@ class ComfortzoneRX95ClimateEntity(CoordinatorEntity, ClimateEntity):
 
                     if new_mode == HVACMode.OFF:
                         new_action = HVACAction.OFF
-                    elif compressor_active_str == "1":
-                        if heating_valve_str == "1":
+                    elif is_truthy(compressor_active_str):
+                        if is_truthy(heating_valve_str):
                             new_action = HVACAction.HEATING
-                        elif hw_valve_str == "1":
+                        elif is_truthy(hw_valve_str):
                             new_action = HVACAction.IDLE
                         else:
                             new_action = HVACAction.IDLE
@@ -227,8 +243,10 @@ class ComfortzoneRX95ClimateEntity(CoordinatorEntity, ClimateEntity):
             if success:
                 self._attr_hvac_mode = hvac_mode
                 self._attr_target_temperature = target_value
+                self._record_optimistic(target_value)
                 self.async_write_ha_state()
                 async_call_later(self.hass, DELAY_REFRESH_AFTER_SET, self._delayed_refresh)
+                async_call_later(self.hass, DELAY_REFRESH_FOLLOWUP, self._delayed_refresh)
             else:
                 _LOGGER.error("Failed to set HVAC mode to %s via API", hvac_mode)
         except (ComfortzoneApiCommandError, ComfortzoneApiClientError) as err:
@@ -254,8 +272,10 @@ class ComfortzoneRX95ClimateEntity(CoordinatorEntity, ClimateEntity):
                 self._attr_hvac_mode = new_mode
                 if new_mode == HVACMode.HEAT:
                     self._last_heat_target = clamped_temp
+                self._record_optimistic(clamped_temp)
                 self.async_write_ha_state()
                 async_call_later(self.hass, DELAY_REFRESH_AFTER_SET, self._delayed_refresh)
+                async_call_later(self.hass, DELAY_REFRESH_FOLLOWUP, self._delayed_refresh)
             else:
                 _LOGGER.error("Failed to set target temperature via API")
         except (ComfortzoneApiCommandError, ComfortzoneApiClientError) as err:

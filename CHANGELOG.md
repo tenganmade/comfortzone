@@ -3,22 +3,46 @@
 All notable changes to the Comfortzone Heat Pump integration are documented here.
 This project uses [Semantic Versioning](https://semver.org/).
 
-## [Unreleased]
+## [2.3.0] – 2026-05-07
 
 ### Added
-- New `calculations.py` module containing all pure derivation helpers
-  (factor curve, RawData parsing, mode predicates) — independently
+- **Optimistic-until-confirmed reads after writes.** New
+  `OptimisticConfirmedMixin` keeps the entity showing the user-written
+  value (`SetIndoorTemp`, `SetHotWaterTemp`, `SetHeatCurve`,
+  `SetHotWaterExtraEnabled`, `SetHolidayReductionDays`) until the
+  Loggamera API actually confirms it on a follow-up poll, with a 90 s
+  timeout safety net. Eliminates UI flicker when the API hasn't caught
+  up to a fresh write at the next coordinator refresh.
+- **Float-tolerant boolean helper** (`is_truthy`) that treats `"1"`,
+  `"1.0"`, `"true"`, `"YES"`, `"on"` and similar variants identically.
+  Used by the mode predicates and switches.
+- New `calculations.py` module exposing the pure derivation helpers
+  (spec curve, RawData parsing, mode predicates). Independently
   importable and unit-testable without Home Assistant installed.
-- `tests/` directory with 23 pytest cases covering the spec-based COP
-  curve, mode predicates, and the API client's retry / spacing behaviour
-  including a concurrent-write scenario that proves the internal write
-  lock keeps HTTP calls strictly sequential.
 
 ### Changed
+- **Faster post-write feedback.** First refresh after a successful set
+  drops from 20 s to **5 s**, with a follow-up at 15 s as a safety net.
+  Combined with the optimistic mixin, the user sees their setting take
+  effect almost immediately without flicker.
+- **Float-tolerant numeric parsing** across sensor / number / switch /
+  binary_sensor / climate. The Loggamera API may report integer-looking
+  values as `"70"` or `"70.0"` interchangeably depending on the field;
+  the integration now accepts both.
 - `api.py` and `computed_sensors.py` now import their helpers from
-  `calculations.py`. No behaviour change; the existing
+  `calculations.py`. The existing
   `from .api import find_value_from_raw_data` continues to work via a
-  re-export.
+  re-export, so any external code keeps compiling.
+- README clarified: the "Price reports öre/kWh" toggle is **off by
+  default** because the modern, official Nord Pool integration in HA
+  already reports `SEK/kWh`. Only enable it for legacy template-based
+  Nord Pool sensors that still emit öre.
+
+### Internal
+- 38 pytest cases (kept locally — `tests/` is now gitignored to keep
+  the HACS package lean) covering the spec-based COP curve, mode
+  predicates with float-shaped booleans, and the API client's
+  retry / spacing / concurrency guarantees.
 
 ## [2.2.0] – 2026-05-07
 

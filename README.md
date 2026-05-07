@@ -176,8 +176,8 @@ flowchart LR
 | :-- | :-- |
 | **Heat pump model** | `RX95` eller `Other` – styr enhetens märke/visning |
 | **Electricity price entity** | Entitets-ID för Nord Pool/elpris-sensor. Krävs för kostnadssensorerna. |
-| **Price reports öre/kWh** | Aktivera om prissensorn rapporterar öre (default för svenska Nord Pool-mallar) |
-| **Compressor electrical factor** | Termisk-till-elektrisk konverteringsfaktor (default 0.4 ≈ COP 2.5). Sänk för effektivare drift. |
+| **Price reports öre/kWh** | **Avstängd som default.** Den moderna officiella Nord Pool-integrationen i HA rapporterar redan i lokal valuta (`SEK/kWh` för SE3) — låt switchen vara av. Aktivera bara om din prissensor rapporterar i öre/kWh (gammal mall-baserad uppsättning). |
+| **Compressor factor override** | `0` (default) = använd EN255 spec-kurvan (faktor 0,235 vid 35°C → 0,314 vid 50°C framledning). Sätt ett värde t.ex. `0,4` för konservativ override. |
 
 ---
 
