@@ -56,6 +56,7 @@ from .calculations import (
 from .const import (
     CLEAR_TEXT_NAMES,
     CONF_COMPRESSOR_ELECTRICAL_FACTOR,
+    CONF_MODEL,
     CONF_PRICE_ENTITY,
     CONF_PRICE_IN_ORE,
     DEFAULT_COMPRESSOR_FACTOR,
@@ -116,6 +117,10 @@ class _ComfortzoneComputedBase(CoordinatorEntity, SensorEntity):
                 CONF_COMPRESSOR_ELECTRICAL_FACTOR, DEFAULT_COMPRESSOR_FACTOR
             )
         )
+
+    def _model(self) -> str:
+        """Return the configured pump model (defaults to RX95)."""
+        return str(self.entry.data.get(CONF_MODEL, "RX95"))
 
 
 # --- Activity status -------------------------------------------------------
@@ -204,7 +209,7 @@ class TotalElectricalPowerSensor(_PowerSensorBase):
 
     def _compute_w(self, values):
         compressor_e = _compute_compressor_electrical_w(
-            values, self._compressor_factor_override()
+            values, self._compressor_factor_override(), self._model()
         )
         if compressor_e is None:
             return None
@@ -245,7 +250,7 @@ class HeatingPowerSensor(_PowerSensorBase):
         if not _is_heating(values):
             return 0.0
         compressor_e = _compute_compressor_electrical_w(
-            values, self._compressor_factor_override()
+            values, self._compressor_factor_override(), self._model()
         )
         if compressor_e is None:
             return 0.0
@@ -271,7 +276,7 @@ class HotWaterPowerSensor(_PowerSensorBase):
         if not _is_hot_water(values):
             return 0.0
         compressor_e = _compute_compressor_electrical_w(
-            values, self._compressor_factor_override()
+            values, self._compressor_factor_override(), self._model()
         )
         if compressor_e is None:
             return 0.0
@@ -348,7 +353,7 @@ class HeatingEnergySensor(_IntegratedEnergySensor):
         if not _is_heating(values):
             return 0.0
         compressor_e = _compute_compressor_electrical_w(
-            values, self._compressor_factor_override()
+            values, self._compressor_factor_override(), self._model()
         ) or 0.0
         return (
             compressor_e
@@ -370,7 +375,7 @@ class HotWaterEnergySensor(_IntegratedEnergySensor):
         if not _is_hot_water(values):
             return 0.0
         compressor_e = _compute_compressor_electrical_w(
-            values, self._compressor_factor_override()
+            values, self._compressor_factor_override(), self._model()
         ) or 0.0
         return (
             compressor_e
@@ -390,7 +395,7 @@ class TotalEnergySensor(_IntegratedEnergySensor):
 
     def _current_power_w(self, values):
         compressor_e = _compute_compressor_electrical_w(
-            values, self._compressor_factor_override()
+            values, self._compressor_factor_override(), self._model()
         ) or 0.0
         return (
             compressor_e
@@ -496,7 +501,7 @@ class HeatingCostSensor(_IntegratedCostSensor):
         if not _is_heating(values):
             return 0.0
         compressor_e = _compute_compressor_electrical_w(
-            values, self._compressor_factor_override()
+            values, self._compressor_factor_override(), self._model()
         ) or 0.0
         return (
             compressor_e
@@ -518,7 +523,7 @@ class HotWaterCostSensor(_IntegratedCostSensor):
         if not _is_hot_water(values):
             return 0.0
         compressor_e = _compute_compressor_electrical_w(
-            values, self._compressor_factor_override()
+            values, self._compressor_factor_override(), self._model()
         ) or 0.0
         return (
             compressor_e
@@ -560,7 +565,7 @@ class InstantCopSensor(_ComfortzoneComputedBase):
             return
         thermal = _read_float(values, CLEAR_TEXT_NAMES["TOTAL_POWER"])
         compressor_e = _compute_compressor_electrical_w(
-            values, self._compressor_factor_override()
+            values, self._compressor_factor_override(), self._model()
         )
         addition = _compute_addition_w(values)
         circ = _compute_circulation_pump_w(values)
@@ -928,7 +933,7 @@ class SpecificHeatingEnergySensor(_ComfortzoneComputedBase, RestoreSensor):
         # Maintain a running heating-energy total (mirrors the global energy sensor)
         if _is_heating(values):
             compressor_e = _compute_compressor_electrical_w(
-                values, self._compressor_factor_override()
+                values, self._compressor_factor_override(), self._model()
             ) or 0.0
             new_power = (
                 compressor_e

@@ -43,7 +43,7 @@
                 "data_description": {
                     "price_entity": "Pick the entity that reports your current electricity spot price. Required for the heating cost / hot water cost sensors to update.",
                     "price_in_ore": "Modern Nord Pool sensors report SEK/kWh — leave this off. Tick if your sensor reports öre/kWh.",
-                    "compressor_electrical_factor": "Leave at 0 to interpolate the EN255 spec curve (factor 0.235 at 35°C flow, 0.314 at 50°C flow). Set a non-zero value (e.g. 0.4) to override with a fixed thermal-to-electrical conversion."
+                    "compressor_electrical_factor": "Leave at 0 to use the selected model's EN255 spec curve (RX95: factor 0.235 at 35°C flow → 0.314 at 50°C flow). Models without a known curve fall back to a generic 0.30 factor. Set a non-zero value (e.g. 0.4) to override with a constant thermal-to-electrical conversion."
                 }
             }
         }

@@ -3,6 +3,28 @@
 All notable changes to the Comfortzone Heat Pump integration are documented here.
 This project uses [Semantic Versioning](https://semver.org/).
 
+## [2.4.0] – 2026-05-07
+
+### Added
+- **Per-model COP curves.** The thermal-to-electrical conversion factor is
+  now looked up per pump model in `MODEL_COP_CURVES`. Selecting `RX95` uses
+  its EN255 datasheet curve (factor 0.235 at 35°C flow → 0.314 at 50°C
+  flow); other models fall back to a generic 0.30 factor that the user can
+  refine via the override option. Adding support for a new model is now a
+  single dict entry — no helper-function changes required.
+- Three additional pytest cases covering the per-model lookup and the
+  generic fallback (41 cases total, all green).
+
+### Changed
+- `compressor_factor_from_flow()` and `compute_compressor_electrical_w()`
+  now take an explicit `model` parameter (defaults to `RX95`). The
+  `OptimisticConfirmedMixin` exposes the configured model so every
+  computed sensor automatically uses the right curve for the configured
+  pump.
+- README and option help texts clarify that the spec-curve numbers are
+  RX95-specific and that other models use a generic fallback until their
+  datasheet values are added.
+
 ## [2.3.0] – 2026-05-07
 
 ### Added

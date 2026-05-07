@@ -16,16 +16,36 @@ CONF_COMPRESSOR_ELECTRICAL_FACTOR = "compressor_electrical_factor"
 
 # Defaults for derived calculations.
 # DEFAULT_COMPRESSOR_FACTOR is the override value used when the user disables
-# the spec-based interpolation. 0 means "use interpolation" (the default).
-# When non-zero it acts as a constant thermal-to-electrical conversion factor.
+# the spec-based interpolation. 0 means "use the model's spec curve" (default).
+# When non-zero it acts as a constant thermal-to-electrical conversion factor
+# that bypasses the curve entirely.
 DEFAULT_COMPRESSOR_FACTOR = 0.0
-# Spec curve points from EN255 (Comfortzone RX95 datasheet):
-#   At 20(12)/35°C: 3,4 kW thermal / 0,8 kW electrical -> factor 0.235
-#   At 20(12)/50°C: 3,5 kW thermal / 1,1 kW electrical -> factor 0.314
-COP_SPEC_FLOW_LOW_C = 35.0
-COP_SPEC_FLOW_HIGH_C = 50.0
-COP_SPEC_FACTOR_LOW = 0.235
-COP_SPEC_FACTOR_HIGH = 0.314
+
+# Per-model thermal-to-electrical conversion curves. Each entry defines two
+# anchor points (flow temperature → factor) taken from the manufacturer's
+# EN255 datasheet. The factor is the inverse of the COP at that operating
+# point: factor = electrical_input_kW / thermal_output_kW. Values between
+# the anchor points are linearly interpolated; outside the range they are
+# clamped to the nearest anchor.
+#
+# RX95 (Comfortzone exhaust-air heat pump):
+#   20(12)/35°C: 3.4 kW thermal / 0.8 kW electrical -> factor 0.235 (COP 4.25)
+#   20(12)/50°C: 3.5 kW thermal / 1.1 kW electrical -> factor 0.314 (COP 3.18)
+MODEL_COP_CURVES: dict[str, dict[str, float]] = {
+    "RX95": {
+        "flow_low_c": 35.0,
+        "factor_low": 0.235,
+        "flow_high_c": 50.0,
+        "factor_high": 0.314,
+    },
+}
+
+# Fallback factor used for models that don't have a known spec curve
+# (currently anything selected as "Other" in the config flow). Roughly
+# matches a working COP of ~3.3 — conservative enough to over-estimate
+# electrical input rather than under-estimate it. Users can replace this
+# with a measured value via the compressor_electrical_factor option.
+DEFAULT_GENERIC_FACTOR = 0.30
 # Maximum nameplate ratings used to convert reported speeds (%) to watts.
 CIRCULATION_PUMP_MAX_W = 75
 FAN_MAX_W = 83

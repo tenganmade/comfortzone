@@ -43,7 +43,7 @@
                 "data_description": {
                     "price_entity": "Välj sensor som rapporterar aktuellt elpris. Krävs för att kostnadssensorerna ska uppdateras.",
                     "price_in_ore": "Moderna Nord Pool rapporterar SEK/kWh — låt den vara av. Markera om din sensor rapporterar öre/kWh.",
-                    "compressor_electrical_factor": "Lämna 0 för att interpolera EN255-spec-kurvan (faktor 0,235 vid 35°C framledning, 0,314 vid 50°C). Sätt ett värde (t.ex. 0,4) för att override:a med en fast termisk-till-elektrisk-faktor."
+                    "compressor_electrical_factor": "Lämna 0 för att använda den valda modellens EN255-kurva (RX95: faktor 0,235 vid 35°C framledning → 0,314 vid 50°C). Modeller utan känd kurva använder en generisk faktor (0,30). Sätt ett värde (t.ex. 0,4) för att override:a med en konstant termisk-till-elektrisk-faktor."
                 }
             }
         }

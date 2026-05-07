@@ -158,7 +158,7 @@ flowchart LR
 | `sensor.comfortzone_reduced_fan_weekends_schedule` | Diagnostik: fläktreduktions­schema helger |
 | `binary_sensor.comfortzone_shower_in_progress` | Heuristisk dusch-detektor (snabb tappning av VV-tanken) |
 
-**Termisk-till-elektrisk konvertering:** RX95-spec­bladets EN255-punkter (3,4 kW termiskt vid 0,8 kW el vid 35°C; 3,5 kW vid 1,1 kW vid 50°C) interpoleras automatiskt över aktuell flow-temp. För att override:a med en fast faktor — sätt `Compressor factor override` i Options (t.ex. `0.4` för konservativ skattning).
+**Termisk-till-elektrisk konvertering:** Varje modell har sin egen EN255-baserade kurva som interpoleras automatiskt över aktuell flow-temp. För **RX95** används datablads­punkterna 3,4 kW termiskt vid 0,8 kW el (35°C framledning) och 3,5 kW vid 1,1 kW (50°C). Andra modeller (`Other`) faller tillbaka till en generisk faktor (0,30) tills datablads­värden lagts till i `MODEL_COP_CURVES`. För att override:a kurvan helt — sätt `Compressor factor override` i Options.
 
 **Varför smart?** Frånluftsvärmepumpen har **bara en kompressor** → all el går till antingen värme **eller** varmvatten, aldrig båda samtidigt. Vi kan separera el-förbrukningen per syfte och föda Energi-panelen med staplade dygns- och månads­kostnader.
 
@@ -177,7 +177,7 @@ flowchart LR
 | **Heat pump model** | `RX95` eller `Other` – styr enhetens märke/visning |
 | **Electricity price entity** | Entitets-ID för Nord Pool/elpris-sensor. Krävs för kostnadssensorerna. |
 | **Price reports öre/kWh** | **Avstängd som default.** Den moderna officiella Nord Pool-integrationen i HA rapporterar redan i lokal valuta (`SEK/kWh` för SE3) — låt switchen vara av. Aktivera bara om din prissensor rapporterar i öre/kWh (gammal mall-baserad uppsättning). |
-| **Compressor factor override** | `0` (default) = använd EN255 spec-kurvan (faktor 0,235 vid 35°C → 0,314 vid 50°C framledning). Sätt ett värde t.ex. `0,4` för konservativ override. |
+| **Compressor factor override** | `0` (default) = använd den valda **modellens** EN255 spec-kurva. För `RX95` är kurvan 0,235 vid 35°C → 0,314 vid 50°C framledning (datablad). För `Other` används en generisk fallback (0,30 ≈ COP 3,3). Sätt ett värde t.ex. `0,4` om du vill ange en konstant konservativ faktor. |
 
 ---
 

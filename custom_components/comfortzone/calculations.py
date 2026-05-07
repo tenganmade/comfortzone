@@ -21,12 +21,12 @@ from typing import Any, Iterable, Optional
 from .const import (
     CIRCULATION_PUMP_MAX_W,
     CLEAR_TEXT_NAMES,
-    COP_SPEC_FACTOR_HIGH,
-    COP_SPEC_FACTOR_LOW,
-    COP_SPEC_FLOW_HIGH_C,
-    COP_SPEC_FLOW_LOW_C,
+    DEFAULT_GENERIC_FACTOR,
     FAN_MAX_W,
+    MODEL_COP_CURVES,
 )
+
+DEFAULT_MODEL = "RX95"
 
 
 # --- RawData primitives ----------------------------------------------------
@@ -60,37 +60,45 @@ def read_float(values_list: Optional[Iterable[Any]], clear_text_name: str) -> Op
 # --- Heat-pump electrical estimation --------------------------------------
 
 
-def compressor_factor_from_flow(flow_temp_c: Optional[float]) -> float:
-    """Interpolate the thermal-to-electrical factor based on flow temperature.
+def compressor_factor_from_flow(
+    flow_temp_c: Optional[float], model: str = DEFAULT_MODEL
+) -> float:
+    """Interpolate the thermal-to-electrical factor for a specific model.
 
-    Anchored at the EN255 spec points from the Comfortzone RX95 datasheet:
+    Each model's curve is defined in ``const.MODEL_COP_CURVES`` and anchored
+    at two EN255 spec points from the manufacturer's datasheet. The factor
+    is linearly interpolated between the anchors and clamped outside the
+    measured range so values stay in physically reasonable territory.
 
-      35°C flow → factor 0.235 (COP 4.25)
-      50°C flow → factor 0.314 (COP 3.18)
-
-    Outside the [35, 50] °C window the curve is clamped to the nearest
-    spec point so values stay in physically reasonable territory.
-    When ``flow_temp_c`` is ``None`` the worst-case (high) factor is used.
+    For models without a known spec curve (currently anything other than
+    RX95, including the ``Other`` selection) the function returns a
+    generic fallback factor — the user can refine this with an explicit
+    override factor via the options flow.
     """
+    curve = MODEL_COP_CURVES.get(model)
+    if curve is None:
+        return DEFAULT_GENERIC_FACTOR
     if flow_temp_c is None:
-        return COP_SPEC_FACTOR_HIGH
-    if flow_temp_c <= COP_SPEC_FLOW_LOW_C:
-        return COP_SPEC_FACTOR_LOW
-    if flow_temp_c >= COP_SPEC_FLOW_HIGH_C:
-        return COP_SPEC_FACTOR_HIGH
-    span = COP_SPEC_FLOW_HIGH_C - COP_SPEC_FLOW_LOW_C
-    pos = (flow_temp_c - COP_SPEC_FLOW_LOW_C) / span
-    return COP_SPEC_FACTOR_LOW + pos * (COP_SPEC_FACTOR_HIGH - COP_SPEC_FACTOR_LOW)
+        return curve["factor_high"]
+    if flow_temp_c <= curve["flow_low_c"]:
+        return curve["factor_low"]
+    if flow_temp_c >= curve["flow_high_c"]:
+        return curve["factor_high"]
+    span = curve["flow_high_c"] - curve["flow_low_c"]
+    pos = (flow_temp_c - curve["flow_low_c"]) / span
+    return curve["factor_low"] + pos * (curve["factor_high"] - curve["factor_low"])
 
 
 def compute_compressor_electrical_w(
-    values: Optional[Iterable[Any]], override_factor: float
+    values: Optional[Iterable[Any]],
+    override_factor: float,
+    model: str = DEFAULT_MODEL,
 ) -> Optional[float]:
     """Estimate compressor electrical input in W from reported thermal output.
 
-    A non-zero ``override_factor`` bypasses the spec curve and uses that
-    constant factor — used when the user has empirical data and prefers a
-    fixed conservative number (e.g. 0.4).
+    A non-zero ``override_factor`` bypasses the model's spec curve and uses
+    that constant factor — useful when the user has empirical measurements
+    or wants to be conservative (e.g. 0.4 for a hand-tuned safety margin).
     """
     thermal = read_float(values, CLEAR_TEXT_NAMES["COMPRESSOR_POWER"])
     if thermal is None:
@@ -98,7 +106,7 @@ def compute_compressor_electrical_w(
     if override_factor and override_factor > 0:
         return thermal * override_factor
     flow_c = read_float(values, CLEAR_TEXT_NAMES["FLOW_TEMP"])
-    return thermal * compressor_factor_from_flow(flow_c)
+    return thermal * compressor_factor_from_flow(flow_c, model)
 
 
 def compute_circulation_pump_w(values: Optional[Iterable[Any]]) -> float:
