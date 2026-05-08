@@ -781,7 +781,13 @@ class HeatingCircuitDeltaTSensor(_ComfortzoneComputedBase):
     """Flow minus return temperature on the space-heating loop (°C).
 
     Healthy delta is roughly 3-7 °C while heating; values < 2 °C suggest
-    excessive circulation, > 8 °C suggests a clogged filter or air pocket.
+    excessive circulation flow, > 8 °C suggests a clogged filter or air
+    pocket.
+
+    The sensor only updates while the heat pump is actually heating —
+    while making hot water or idle the same TE1/TE2 sensors are reading
+    a stale or reverse-direction loop, so we hold the last measured value
+    until heating resumes (rather than reporting nonsense like -30 °C).
     """
 
     _attr_state_class = SensorStateClass.MEASUREMENT
@@ -802,17 +808,66 @@ class HeatingCircuitDeltaTSensor(_ComfortzoneComputedBase):
         values = _coordinator_values(self.coordinator)
         if values is None:
             self._attr_available = False
-            self._attr_native_value = None
+            self.async_write_ha_state()
+            return
+        # Only meaningful while heating — otherwise the loop is parked or
+        # being driven in the opposite direction by the exchange valve.
+        if not _is_heating(values):
+            self._attr_available = self._attr_native_value is not None
             self.async_write_ha_state()
             return
         flow = _read_float(values, CLEAR_TEXT_NAMES["FLOW_TEMP"])
         ret = _read_float(values, CLEAR_TEXT_NAMES["RETURN_TEMP"])
         if flow is None or ret is None:
+            return  # keep the last reading
+        self._attr_native_value = round(flow - ret, 2)
+        self._attr_available = True
+        self.async_write_ha_state()
+
+
+class HotWaterLoopDeltaTSensor(_ComfortzoneComputedBase):
+    """Absolute temperature differential across the heat exchanger while
+    making hot water (°C).
+
+    During domestic hot water production the same TE1/TE2 sensors read in
+    the opposite direction relative to space heating, so the absolute
+    difference is the meaningful number. Values around 25-40 °C are
+    healthy on an RX95 — the compressor is lifting tank water from ~30 °C
+    to ~60 °C in a single pass.
+    """
+
+    _attr_state_class = SensorStateClass.MEASUREMENT
+    _attr_native_unit_of_measurement = UnitOfTemperature.CELSIUS
+    _attr_suggested_display_precision = 1
+
+    def __init__(self, coordinator, entry):
+        super().__init__(
+            coordinator, entry,
+            suffix="hot_water_loop_delta_t",
+            name="Hot water loop ΔT",
+            icon="mdi:thermometer-water",
+        )
+        self._attr_native_value: float | None = None
+
+    @callback
+    def _handle_coordinator_update(self) -> None:
+        values = _coordinator_values(self.coordinator)
+        if values is None:
             self._attr_available = False
-            self._attr_native_value = None
-        else:
-            self._attr_native_value = round(flow - ret, 2)
-            self._attr_available = True
+            self.async_write_ha_state()
+            return
+        if not _is_hot_water(values):
+            # Hold last value while pump is doing something else.
+            self._attr_available = self._attr_native_value is not None
+            self.async_write_ha_state()
+            return
+        flow = _read_float(values, CLEAR_TEXT_NAMES["FLOW_TEMP"])
+        ret = _read_float(values, CLEAR_TEXT_NAMES["RETURN_TEMP"])
+        if flow is None or ret is None:
+            return
+        self._attr_native_value = round(abs(flow - ret), 2)
+        self._attr_available = True
+        self.async_write_ha_state()
         self.async_write_ha_state()
 
 
@@ -1065,8 +1120,9 @@ def build_computed_sensors(
         # Per-mode runtime
         HeatingRuntimeSensor(coordinator, entry),
         HotWaterRuntimeSensor(coordinator, entry),
-        # Diagnostics on the heating loop
+        # Diagnostics on the heating and hot-water loops
         HeatingCircuitDeltaTSensor(coordinator, entry),
+        HotWaterLoopDeltaTSensor(coordinator, entry),
         # Tank dynamics & house thermal performance
         TankDecayRateSensor(coordinator, entry),
         SpecificHeatingEnergySensor(coordinator, entry),

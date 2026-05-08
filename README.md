@@ -151,7 +151,12 @@ flowchart LR
 | `sensor.comfortzone_last_defrost_duration` | Längd på senaste avfrostning (min) |
 | `sensor.comfortzone_heating_runtime` | Total drifttid värmeläge (h) |
 | `sensor.comfortzone_hot_water_runtime` | Total drifttid VV-läge (h) |
-| `sensor.comfortzone_heating_circuit_delta_t` | Flow − Return på värmesidan (°C). Hälsosamt: 3–7°C |
+| `sensor.comfortzone_heating_circuit_delta_t` | Flow − Return på värmesidan (°C). Uppdateras **bara under värmedrift**; håller senaste värdet annars. Hälsosamt: 3–7°C |
+| `sensor.comfortzone_hot_water_loop_delta_t` | Absolut Δ över värmeväxlaren under VV-produktion (°C). Hälsosamt: ~25–40°C |
+| `binary_sensor.comfortzone_compressor_short_cycling` | Larm — kompressorn startar >6 gånger på 1h |
+| `binary_sensor.comfortzone_addition_heater_active` | Larm — tillskott (elpatron) >500W i mer än 10 min |
+| `binary_sensor.comfortzone_filter_change_due_soon` | Förvarning — <7 dagar kvar till filterbyte |
+| `binary_sensor.comfortzone_low_hot_water` | Larm — VV-tank <40°C (släpper vid >43°C, hysteres) |
 | `sensor.comfortzone_tank_decay_rate` | Hur snabbt VV-tanken tappar °C/h vid idle |
 | `sensor.comfortzone_specific_heating_energy` | kWh per °C inomhus-höjning (EMA) |
 | `sensor.comfortzone_reduced_fan_weekdays_schedule` | Diagnostik: fläktreduktions­schema veckodagar |

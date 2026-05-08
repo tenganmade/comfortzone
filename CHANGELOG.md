@@ -3,6 +3,32 @@
 All notable changes to the Comfortzone Heat Pump integration are documented here.
 This project uses [Semantic Versioning](https://semver.org/).
 
+## [2.5.0] – 2026-05-08
+
+### Fixed
+- `heating_circuit_delta_t` no longer reports nonsense (e.g. -30 °C)
+  while the pump is producing hot water or idling. The sensor now
+  updates **only during heating mode** and holds the last meaningful
+  reading otherwise — values land in the expected 0–7 °C band.
+
+### Added
+- **Hot water loop ΔT** sensor (`hot_water_loop_delta_t`). Mirror of
+  the heating ΔT sensor for DHW production: shows the absolute
+  temperature differential the heat exchanger lifts in a single pass
+  (~25–40 °C is healthy on RX95).
+- **Compressor short-cycling alarm** (`compressor_short_cycling`,
+  PROBLEM device class). Trips when the compressor starts more than
+  6 times in the last hour — typically means undersized emitters,
+  hysteresis tuning, or refrigerant-charge issues.
+- **Addition heater active alarm** (`addition_heater_active`). Trips
+  when the resistive elpatron has been drawing >500 W for more than
+  10 minutes. Aligned with the goal of avoiding COP-1 backup heat.
+- **Filter change soon warning** (`filter_change_due_soon`). Soft
+  warning when fewer than 7 days remain on the filter timer.
+- **Low hot water warning** (`low_hot_water`). Trips at <40 °C tank
+  temperature, clears at >43 °C (hysteresis). Useful trigger for
+  "load DHW now if price is below average" automations.
+
 ## [2.4.0] – 2026-05-07
 
 ### Added
