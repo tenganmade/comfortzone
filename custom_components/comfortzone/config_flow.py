@@ -27,6 +27,8 @@ from .const import (
     CONF_FILTER_WARNING_DAYS,
     CONF_LOW_HW_HYSTERESIS_C,
     CONF_LOW_HW_THRESHOLD_C,
+    CONF_MAX_LOAD_DURATION_S,
+    CONF_MAX_LOAD_THRESHOLD_PCT,
     CONF_MODEL,
     CONF_PRICE_ENTITY,
     CONF_PRICE_IN_ORE,
@@ -37,6 +39,8 @@ from .const import (
     DEFAULT_FILTER_WARNING_DAYS,
     DEFAULT_LOW_HW_HYSTERESIS_C,
     DEFAULT_LOW_HW_THRESHOLD_C,
+    DEFAULT_MAX_LOAD_DURATION_S,
+    DEFAULT_MAX_LOAD_THRESHOLD_PCT,
     DEFAULT_SHORT_CYCLE_THRESHOLD,
     DOMAIN,
 )
@@ -237,5 +241,21 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
                 ),
             )
         ] = vol.All(vol.Coerce(float), vol.Range(min=0.5, max=10.0))
+        schema_dict[
+            vol.Optional(
+                CONF_MAX_LOAD_THRESHOLD_PCT,
+                default=opts.get(
+                    CONF_MAX_LOAD_THRESHOLD_PCT, DEFAULT_MAX_LOAD_THRESHOLD_PCT
+                ),
+            )
+        ] = vol.All(vol.Coerce(int), vol.Range(min=50, max=100))
+        schema_dict[
+            vol.Optional(
+                CONF_MAX_LOAD_DURATION_S,
+                default=opts.get(
+                    CONF_MAX_LOAD_DURATION_S, DEFAULT_MAX_LOAD_DURATION_S
+                ),
+            )
+        ] = vol.All(vol.Coerce(int), vol.Range(min=10, max=3600))
 
         return self.async_show_form(step_id="init", data_schema=vol.Schema(schema_dict))

@@ -3,6 +3,18 @@
 All notable changes to the Comfortzone Heat Pump integration are documented here.
 This project uses [Semantic Versioning](https://semver.org/).
 
+## [2.7.0] – 2026-05-08
+
+### Added
+- **Compressor running-at-max binary sensor**
+  (`compressor_running_at_max`). Trips when inverter load has been
+  continuously at or above the configured threshold for the configured
+  duration. Useful as a clean automation trigger for "pump is out of
+  headroom" reasoning — e.g. accept that indoor target won't be
+  reached, defer DHW production, or ease the heat curve so the pump
+  isn't forced into the resistive backup. Defaults: 90 % for 5 min;
+  both configurable via the options flow.
+
 ## [2.6.0] – 2026-05-08
 
 ### Added

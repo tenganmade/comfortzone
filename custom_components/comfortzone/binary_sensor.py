@@ -33,12 +33,16 @@ from .const import (
     CONF_FILTER_WARNING_DAYS,
     CONF_LOW_HW_HYSTERESIS_C,
     CONF_LOW_HW_THRESHOLD_C,
+    CONF_MAX_LOAD_DURATION_S,
+    CONF_MAX_LOAD_THRESHOLD_PCT,
     CONF_SHORT_CYCLE_THRESHOLD,
     DEFAULT_ADDITION_DURATION_THRESHOLD_S,
     DEFAULT_ADDITION_POWER_THRESHOLD_W,
     DEFAULT_FILTER_WARNING_DAYS,
     DEFAULT_LOW_HW_HYSTERESIS_C,
     DEFAULT_LOW_HW_THRESHOLD_C,
+    DEFAULT_MAX_LOAD_DURATION_S,
+    DEFAULT_MAX_LOAD_THRESHOLD_PCT,
     DEFAULT_SHORT_CYCLE_THRESHOLD,
     DOMAIN,
 )
@@ -158,6 +162,7 @@ async def async_setup_entry(
     entities.append(AdditionHeaterActiveBinarySensor(coordinator, entry))
     entities.append(FilterChangeSoonBinarySensor(coordinator, entry))
     entities.append(LowHotWaterBinarySensor(coordinator, entry))
+    entities.append(CompressorRunningAtMaxBinarySensor(coordinator, entry))
 
     async_add_entities(entities)
 
@@ -575,5 +580,84 @@ class LowHotWaterBinarySensor(_ComfortzoneAlarmBase):
             "tank_temp_c": tank_c,
             "on_threshold_c": on_c,
             "off_threshold_c": off_c,
+        }
+        self.async_write_ha_state()
+
+
+class CompressorRunningAtMaxBinarySensor(_ComfortzoneAlarmBase):
+    """Trips when the inverter compressor has been running near its
+    maximum frequency for a sustained period.
+
+    A clean trigger for automations that need to react when the heat
+    pump is out of headroom — e.g. accept that the indoor target won't
+    be reached, defer DHW production, or back off the heat curve so the
+    pump isn't forced to call on the resistive backup.
+
+    The threshold (default 90 %) and duration (default 5 minutes) are
+    configurable via the options flow.
+    """
+
+    # This isn't really a "problem" in the alarm sense — it's
+    # informational state about the pump's current capacity headroom.
+    _attr_device_class = None
+
+    def __init__(self, coordinator, entry):
+        super().__init__(
+            coordinator, entry,
+            suffix="compressor_running_at_max",
+            name="Compressor running at max",
+            icon="mdi:gauge-full",
+        )
+        self._above_threshold_since: Optional[datetime] = None
+
+    def _threshold_pct(self) -> float:
+        return float(_option(
+            self.entry,
+            CONF_MAX_LOAD_THRESHOLD_PCT,
+            DEFAULT_MAX_LOAD_THRESHOLD_PCT,
+        ))
+
+    def _duration_s(self) -> int:
+        return int(_option(
+            self.entry,
+            CONF_MAX_LOAD_DURATION_S,
+            DEFAULT_MAX_LOAD_DURATION_S,
+        ))
+
+    @callback
+    def _handle_coordinator_update(self) -> None:
+        values = _coordinator_values(self.coordinator)
+        if values is None:
+            self._attr_available = False
+            self.async_write_ha_state()
+            return
+        freq = _read_float(values, CLEAR_TEXT_NAMES["COMPRESSOR_FREQ"])
+        freq_max = _read_float(values, CLEAR_TEXT_NAMES["COMPRESSOR_FREQ_MAX"])
+        if freq is None or freq_max is None or freq_max <= 0:
+            self._attr_available = False
+            self.async_write_ha_state()
+            return
+        load_pct = (freq / freq_max) * 100
+        threshold = self._threshold_pct()
+        duration = self._duration_s()
+        now = dt_util.utcnow()
+        if load_pct >= threshold:
+            if self._above_threshold_since is None:
+                self._above_threshold_since = now
+            elapsed = (now - self._above_threshold_since).total_seconds()
+            self._attr_is_on = elapsed >= duration
+        else:
+            self._above_threshold_since = None
+            self._attr_is_on = False
+        self._attr_available = True
+        self._attr_extra_state_attributes = {
+            "load_pct": round(load_pct, 1),
+            "threshold_pct": threshold,
+            "duration_threshold_s": duration,
+            "above_threshold_seconds": (
+                (now - self._above_threshold_since).total_seconds()
+                if self._above_threshold_since is not None
+                else 0
+            ),
         }
         self.async_write_ha_state()

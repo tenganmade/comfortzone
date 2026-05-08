@@ -161,6 +161,7 @@ flowchart LR
 | `sensor.comfortzone_dhw_production_rate` | Termisk kW under VV-produktion (5-min snitt). Av som standard |
 | `sensor.comfortzone_tank_heating_rate` | °C/h under VV-laddning (motsvarighet till tank_decay_rate). Av som standard |
 | `sensor.comfortzone_compressor_load_percentage` | Aktuell kompressor-belastning (frekvens / max-frekvens × 100) |
+| `binary_sensor.comfortzone_compressor_running_at_max` | Larm — kompressorn har kört nära max (default ≥90% i ≥5 min). Användbar trigger för "pumpen har inget headroom kvar" |
 | `sensor.comfortzone_tank_decay_rate` | Hur snabbt VV-tanken tappar °C/h vid idle |
 | `sensor.comfortzone_specific_heating_energy` | kWh per °C inomhus-höjning (EMA) |
 | `sensor.comfortzone_reduced_fan_weekdays_schedule` | Diagnostik: fläktreduktions­schema veckodagar |
@@ -192,6 +193,7 @@ flowchart LR
 | **Addition duration threshold** | Standard `600` s (10 min). Sammanhängande tid över power-tröskeln innan tillskott-larmet aktiveras. |
 | **Filter warning days** | Standard `7` dagar kvar för förvarningen. |
 | **Low HW threshold + hysteresis** | Standard `40` °C tröskel + `3` °C hysteres → larm aktiveras < 40 °C, släpper > 43 °C. |
+| **Compressor running-at-max threshold + duration** | Standard `90` % i `300` s → trippar när inverter-frekvensen varit ≥ 90 % av max sammanhängande i ≥ 5 minuter. |
 
 ---
 

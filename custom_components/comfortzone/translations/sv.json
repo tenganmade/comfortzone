@@ -44,7 +44,9 @@
                     "addition_duration_threshold_s": "Tillskott-larm — varaktighet (sekunder)",
                     "filter_warning_days": "Filterbyte-förvarning (dagar kvar)",
                     "low_hw_threshold_c": "Lågt VV-larm — trösktemperatur (°C)",
-                    "low_hw_hysteresis_c": "Lågt VV-larm — hysteres (°C)"
+                    "low_hw_hysteresis_c": "Lågt VV-larm — hysteres (°C)",
+                    "max_load_threshold_pct": "Kompressor full last — belastningströskel (%)",
+                    "max_load_duration_s": "Kompressor full last — varaktighet (sekunder)"
                 },
                 "data_description": {
                     "price_entity": "Välj sensor som rapporterar aktuellt elpris. Krävs för att kostnadssensorerna ska uppdateras.",
@@ -55,7 +57,9 @@
                     "addition_duration_threshold_s": "Standard 600 s (10 min). Tillskott måste vara aktivt längre än så innan larmet aktiveras.",
                     "filter_warning_days": "Standard 7. Filterförvarningen aktiveras när färre än så många dagar återstår på filter­timern.",
                     "low_hw_threshold_c": "Standard 40°C. Larmet aktiveras när tanken sjunker under denna temperatur.",
-                    "low_hw_hysteresis_c": "Standard 3°C. Larmet släpper när tanken överstiger (tröskel + hysteres), vilket undviker att larmet flippar på och av."
+                    "low_hw_hysteresis_c": "Standard 3°C. Larmet släpper när tanken överstiger (tröskel + hysteres), vilket undviker att larmet flippar på och av.",
+                    "max_load_threshold_pct": "Standard 90%. Signalen aktiveras när inverter-frekvensen når denna andel av maxfrekvensen.",
+                    "max_load_duration_s": "Standard 300s (5 min). Signalen aktiveras först när lasten varit oavbrutet över tröskeln så här länge."
                 }
             }
         }

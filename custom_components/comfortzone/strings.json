@@ -44,7 +44,9 @@
                     "addition_duration_threshold_s": "Addition heater alarm — duration threshold (seconds)",
                     "filter_warning_days": "Filter change warning (days remaining)",
                     "low_hw_threshold_c": "Low hot water alarm — trip temperature (°C)",
-                    "low_hw_hysteresis_c": "Low hot water alarm — hysteresis (°C)"
+                    "low_hw_hysteresis_c": "Low hot water alarm — hysteresis (°C)",
+                    "max_load_threshold_pct": "Compressor running-at-max — load threshold (%)",
+                    "max_load_duration_s": "Compressor running-at-max — duration (seconds)"
                 },
                 "data_description": {
                     "price_entity": "Pick the entity that reports your current electricity spot price. Required for the heating cost / hot water cost sensors to update.",
@@ -55,7 +57,9 @@
                     "addition_duration_threshold_s": "Default 600 s (10 min). Sustained addition-heater operation must exceed this duration before the alarm trips.",
                     "filter_warning_days": "Default 7. The soft filter warning trips when fewer than this many days remain on the filter timer.",
                     "low_hw_threshold_c": "Default 40 °C. The low-hot-water alarm trips when the tank drops below this temperature.",
-                    "low_hw_hysteresis_c": "Default 3 °C. The alarm clears when the tank exceeds (threshold + hysteresis), preventing on/off bouncing."
+                    "low_hw_hysteresis_c": "Default 3 °C. The alarm clears when the tank exceeds (threshold + hysteresis), preventing on/off bouncing.",
+                    "max_load_threshold_pct": "Default 90 %. The compressor-running-at-max signal trips when the inverter frequency reaches this share of its maximum.",
+                    "max_load_duration_s": "Default 300 s (5 min). The signal only trips after the load has been continuously above the threshold for at least this duration."
                 }
             }
         }
