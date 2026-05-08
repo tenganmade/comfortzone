@@ -3,6 +3,33 @@
 All notable changes to the Comfortzone Heat Pump integration are documented here.
 This project uses [Semantic Versioning](https://semver.org/).
 
+## [2.6.0] – 2026-05-08
+
+### Added
+- **Configurable alarm thresholds.** All four alarm sensors gained
+  options-flow controls:
+  - `short_cycle_threshold` — starts per hour (default 6)
+  - `addition_power_threshold_w` (default 500 W) and
+    `addition_duration_threshold_s` (default 600 s, i.e. 10 min)
+  - `filter_warning_days` (default 7)
+  - `low_hw_threshold_c` (default 40 °C) and
+    `low_hw_hysteresis_c` (default 3 °C; alarm clears at threshold +
+    hysteresis)
+- **Addition heater runtime sensor** (`addition_heater_runtime`).
+  Cumulative hours the resistive backup has been drawing >100 W.
+  Lets you spot how much expensive COP-1 electricity has slipped past
+  the heat pump and informs whether settings need adjusting.
+- **DHW production rate sensor** (`dhw_production_rate`). Thermal kW
+  averaged over a 5-minute window during HW production. Drops over
+  time at constant compressor load are an early sign of fouling /
+  limescale on the tank coil. Disabled by default.
+- **Tank heating rate sensor** (`tank_heating_rate`). Mirror image
+  of `tank_decay_rate` — °C per hour while the tank is being charged.
+  Disabled by default.
+- **Compressor load percentage sensor** (`compressor_load_percentage`).
+  `frequency / freq_max × 100`. Lets a controller know whether the
+  compressor still has headroom or is already pinned at 100 %.
+
 ## [2.5.0] – 2026-05-08
 
 ### Fixed

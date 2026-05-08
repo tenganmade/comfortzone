@@ -38,12 +38,24 @@
                     "model": "Heat pump model",
                     "price_entity": "Electricity price entity (optional)",
                     "price_in_ore": "Price entity reports öre/kWh (uncheck for SEK/kWh)",
-                    "compressor_electrical_factor": "Compressor factor override (0 = use spec curve)"
+                    "compressor_electrical_factor": "Compressor factor override (0 = use spec curve)",
+                    "short_cycle_threshold": "Short-cycling alarm threshold (starts per hour)",
+                    "addition_power_threshold_w": "Addition heater alarm — power threshold (W)",
+                    "addition_duration_threshold_s": "Addition heater alarm — duration threshold (seconds)",
+                    "filter_warning_days": "Filter change warning (days remaining)",
+                    "low_hw_threshold_c": "Low hot water alarm — trip temperature (°C)",
+                    "low_hw_hysteresis_c": "Low hot water alarm — hysteresis (°C)"
                 },
                 "data_description": {
                     "price_entity": "Pick the entity that reports your current electricity spot price. Required for the heating cost / hot water cost sensors to update.",
                     "price_in_ore": "Modern Nord Pool sensors report SEK/kWh — leave this off. Tick if your sensor reports öre/kWh.",
-                    "compressor_electrical_factor": "Leave at 0 to use the selected model's EN255 spec curve (RX95: factor 0.235 at 35°C flow → 0.314 at 50°C flow). Models without a known curve fall back to a generic 0.30 factor. Set a non-zero value (e.g. 0.4) to override with a constant thermal-to-electrical conversion."
+                    "compressor_electrical_factor": "Leave at 0 to use the selected model's EN255 spec curve (RX95: factor 0.235 at 35°C flow → 0.314 at 50°C flow). Models without a known curve fall back to a generic 0.30 factor. Set a non-zero value (e.g. 0.4) to override with a constant thermal-to-electrical conversion.",
+                    "short_cycle_threshold": "Default 6. Trips the short-cycling alarm when the compressor starts more than this many times in a 1-hour rolling window.",
+                    "addition_power_threshold_w": "Default 500 W. The addition heater alarm only counts samples that draw at least this much power.",
+                    "addition_duration_threshold_s": "Default 600 s (10 min). Sustained addition-heater operation must exceed this duration before the alarm trips.",
+                    "filter_warning_days": "Default 7. The soft filter warning trips when fewer than this many days remain on the filter timer.",
+                    "low_hw_threshold_c": "Default 40 °C. The low-hot-water alarm trips when the tank drops below this temperature.",
+                    "low_hw_hysteresis_c": "Default 3 °C. The alarm clears when the tank exceeds (threshold + hysteresis), preventing on/off bouncing."
                 }
             }
         }

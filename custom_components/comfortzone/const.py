@@ -14,6 +14,21 @@ CONF_PRICE_ENTITY = "price_entity"
 CONF_PRICE_IN_ORE = "price_in_ore"
 CONF_COMPRESSOR_ELECTRICAL_FACTOR = "compressor_electrical_factor"
 
+# Tunable alarm thresholds (defaults match the values used in 2.5.x)
+CONF_SHORT_CYCLE_THRESHOLD = "short_cycle_threshold"
+CONF_ADDITION_POWER_THRESHOLD_W = "addition_power_threshold_w"
+CONF_ADDITION_DURATION_THRESHOLD_S = "addition_duration_threshold_s"
+CONF_FILTER_WARNING_DAYS = "filter_warning_days"
+CONF_LOW_HW_THRESHOLD_C = "low_hw_threshold_c"
+CONF_LOW_HW_HYSTERESIS_C = "low_hw_hysteresis_c"
+
+DEFAULT_SHORT_CYCLE_THRESHOLD = 6
+DEFAULT_ADDITION_POWER_THRESHOLD_W = 500
+DEFAULT_ADDITION_DURATION_THRESHOLD_S = 600  # 10 minutes
+DEFAULT_FILTER_WARNING_DAYS = 7
+DEFAULT_LOW_HW_THRESHOLD_C = 40.0
+DEFAULT_LOW_HW_HYSTERESIS_C = 3.0
+
 # Defaults for derived calculations.
 # DEFAULT_COMPRESSOR_FACTOR is the override value used when the user disables
 # the spec-based interpolation. 0 means "use the model's spec curve" (default).

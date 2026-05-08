@@ -38,12 +38,24 @@
                     "model": "Värmepumpsmodell",
                     "price_entity": "Elprissensor (valfri)",
                     "price_in_ore": "Prissensor rapporterar öre/kWh (avmarkera för SEK/kWh)",
-                    "compressor_electrical_factor": "Override-faktor för kompressor (0 = använd spec-kurva)"
+                    "compressor_electrical_factor": "Override-faktor för kompressor (0 = använd spec-kurva)",
+                    "short_cycle_threshold": "Larmgräns kortcykling (starter per timme)",
+                    "addition_power_threshold_w": "Tillskott-larm — effekttröskel (W)",
+                    "addition_duration_threshold_s": "Tillskott-larm — varaktighet (sekunder)",
+                    "filter_warning_days": "Filterbyte-förvarning (dagar kvar)",
+                    "low_hw_threshold_c": "Lågt VV-larm — trösktemperatur (°C)",
+                    "low_hw_hysteresis_c": "Lågt VV-larm — hysteres (°C)"
                 },
                 "data_description": {
                     "price_entity": "Välj sensor som rapporterar aktuellt elpris. Krävs för att kostnadssensorerna ska uppdateras.",
                     "price_in_ore": "Moderna Nord Pool rapporterar SEK/kWh — låt den vara av. Markera om din sensor rapporterar öre/kWh.",
-                    "compressor_electrical_factor": "Lämna 0 för att använda den valda modellens EN255-kurva (RX95: faktor 0,235 vid 35°C framledning → 0,314 vid 50°C). Modeller utan känd kurva använder en generisk faktor (0,30). Sätt ett värde (t.ex. 0,4) för att override:a med en konstant termisk-till-elektrisk-faktor."
+                    "compressor_electrical_factor": "Lämna 0 för att använda den valda modellens EN255-kurva (RX95: faktor 0,235 vid 35°C framledning → 0,314 vid 50°C). Modeller utan känd kurva använder en generisk faktor (0,30). Sätt ett värde (t.ex. 0,4) för att override:a med en konstant termisk-till-elektrisk-faktor.",
+                    "short_cycle_threshold": "Standard 6. Kortcyklings-larmet aktiveras när kompressorn startar fler gånger än så under en rullande timme.",
+                    "addition_power_threshold_w": "Standard 500 W. Tillskotts­larmet räknar bara samples som drar minst så mycket effekt.",
+                    "addition_duration_threshold_s": "Standard 600 s (10 min). Tillskott måste vara aktivt längre än så innan larmet aktiveras.",
+                    "filter_warning_days": "Standard 7. Filterförvarningen aktiveras när färre än så många dagar återstår på filter­timern.",
+                    "low_hw_threshold_c": "Standard 40°C. Larmet aktiveras när tanken sjunker under denna temperatur.",
+                    "low_hw_hysteresis_c": "Standard 3°C. Larmet släpper när tanken överstiger (tröskel + hysteres), vilket undviker att larmet flippar på och av."
                 }
             }
         }

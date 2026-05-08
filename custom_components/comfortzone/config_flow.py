@@ -20,12 +20,24 @@ from .api import (
     ComfortzoneApiCommunicationError,
 )
 from .const import (
+    CONF_ADDITION_DURATION_THRESHOLD_S,
+    CONF_ADDITION_POWER_THRESHOLD_W,
     CONF_COMPRESSOR_ELECTRICAL_FACTOR,
     CONF_DEVICE_ID,
+    CONF_FILTER_WARNING_DAYS,
+    CONF_LOW_HW_HYSTERESIS_C,
+    CONF_LOW_HW_THRESHOLD_C,
     CONF_MODEL,
     CONF_PRICE_ENTITY,
     CONF_PRICE_IN_ORE,
+    CONF_SHORT_CYCLE_THRESHOLD,
+    DEFAULT_ADDITION_DURATION_THRESHOLD_S,
+    DEFAULT_ADDITION_POWER_THRESHOLD_W,
     DEFAULT_COMPRESSOR_FACTOR,
+    DEFAULT_FILTER_WARNING_DAYS,
+    DEFAULT_LOW_HW_HYSTERESIS_C,
+    DEFAULT_LOW_HW_THRESHOLD_C,
+    DEFAULT_SHORT_CYCLE_THRESHOLD,
     DOMAIN,
 )
 
@@ -173,5 +185,57 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
                 ),
             )
         ] = vol.All(vol.Coerce(float), vol.Range(min=0.0, max=1.0))
+
+        # --- Tunable alarm thresholds ---
+        schema_dict[
+            vol.Optional(
+                CONF_SHORT_CYCLE_THRESHOLD,
+                default=opts.get(
+                    CONF_SHORT_CYCLE_THRESHOLD, DEFAULT_SHORT_CYCLE_THRESHOLD
+                ),
+            )
+        ] = vol.All(vol.Coerce(int), vol.Range(min=2, max=30))
+        schema_dict[
+            vol.Optional(
+                CONF_ADDITION_POWER_THRESHOLD_W,
+                default=opts.get(
+                    CONF_ADDITION_POWER_THRESHOLD_W,
+                    DEFAULT_ADDITION_POWER_THRESHOLD_W,
+                ),
+            )
+        ] = vol.All(vol.Coerce(int), vol.Range(min=50, max=6000))
+        schema_dict[
+            vol.Optional(
+                CONF_ADDITION_DURATION_THRESHOLD_S,
+                default=opts.get(
+                    CONF_ADDITION_DURATION_THRESHOLD_S,
+                    DEFAULT_ADDITION_DURATION_THRESHOLD_S,
+                ),
+            )
+        ] = vol.All(vol.Coerce(int), vol.Range(min=10, max=3600))
+        schema_dict[
+            vol.Optional(
+                CONF_FILTER_WARNING_DAYS,
+                default=opts.get(
+                    CONF_FILTER_WARNING_DAYS, DEFAULT_FILTER_WARNING_DAYS
+                ),
+            )
+        ] = vol.All(vol.Coerce(int), vol.Range(min=1, max=60))
+        schema_dict[
+            vol.Optional(
+                CONF_LOW_HW_THRESHOLD_C,
+                default=opts.get(
+                    CONF_LOW_HW_THRESHOLD_C, DEFAULT_LOW_HW_THRESHOLD_C
+                ),
+            )
+        ] = vol.All(vol.Coerce(float), vol.Range(min=20.0, max=55.0))
+        schema_dict[
+            vol.Optional(
+                CONF_LOW_HW_HYSTERESIS_C,
+                default=opts.get(
+                    CONF_LOW_HW_HYSTERESIS_C, DEFAULT_LOW_HW_HYSTERESIS_C
+                ),
+            )
+        ] = vol.All(vol.Coerce(float), vol.Range(min=0.5, max=10.0))
 
         return self.async_show_form(step_id="init", data_schema=vol.Schema(schema_dict))

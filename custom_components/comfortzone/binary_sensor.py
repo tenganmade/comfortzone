@@ -25,8 +25,32 @@ from .calculations import (
     read_float as _read_float,
 )
 from .computed_sensors import _coordinator_values
-from .const import BINARY_SENSOR_MAP, CLEAR_TEXT_NAMES, DOMAIN
+from .const import (
+    BINARY_SENSOR_MAP,
+    CLEAR_TEXT_NAMES,
+    CONF_ADDITION_DURATION_THRESHOLD_S,
+    CONF_ADDITION_POWER_THRESHOLD_W,
+    CONF_FILTER_WARNING_DAYS,
+    CONF_LOW_HW_HYSTERESIS_C,
+    CONF_LOW_HW_THRESHOLD_C,
+    CONF_SHORT_CYCLE_THRESHOLD,
+    DEFAULT_ADDITION_DURATION_THRESHOLD_S,
+    DEFAULT_ADDITION_POWER_THRESHOLD_W,
+    DEFAULT_FILTER_WARNING_DAYS,
+    DEFAULT_LOW_HW_HYSTERESIS_C,
+    DEFAULT_LOW_HW_THRESHOLD_C,
+    DEFAULT_SHORT_CYCLE_THRESHOLD,
+    DOMAIN,
+)
 from .entity import build_device_info, device_unique_id
+
+
+def _option(entry, key, default):
+    """Return the option value or the default if unset/empty."""
+    raw = entry.options.get(key, default)
+    if raw in (None, ""):
+        return default
+    return raw
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -334,13 +358,13 @@ class ShortCyclingBinarySensor(_ComfortzoneAlarmBase):
     """Flags when the compressor is starting too often.
 
     Inverter heat pumps should ramp speed rather than turn the compressor
-    on and off repeatedly. More than ``THRESHOLD_STARTS`` starts in the
-    last hour suggests short cycling — typically caused by an undersized
-    heat emitter, low refrigerant charge, or oversized hysteresis.
-    Sustained short cycling shortens compressor life dramatically.
+    on and off repeatedly. More than the configured threshold of starts
+    in the last hour suggests short cycling — typically caused by an
+    undersized heat emitter, low refrigerant charge, or oversized
+    hysteresis. Sustained short cycling shortens compressor life
+    dramatically. Threshold is configurable via the options flow.
     """
 
-    THRESHOLD_STARTS = 6
     WINDOW_SECONDS = 60 * 60
 
     def __init__(self, coordinator, entry):
@@ -352,6 +376,11 @@ class ShortCyclingBinarySensor(_ComfortzoneAlarmBase):
         )
         self._start_times: Deque[datetime] = deque()
         self._last_was_running: bool = False
+
+    def _threshold(self) -> int:
+        return int(_option(
+            self.entry, CONF_SHORT_CYCLE_THRESHOLD, DEFAULT_SHORT_CYCLE_THRESHOLD
+        ))
 
     @callback
     def _handle_coordinator_update(self) -> None:
@@ -369,12 +398,13 @@ class ShortCyclingBinarySensor(_ComfortzoneAlarmBase):
             self._start_times.popleft()
         self._last_was_running = running
 
+        threshold = self._threshold()
         starts = len(self._start_times)
-        self._attr_is_on = starts >= self.THRESHOLD_STARTS
+        self._attr_is_on = starts >= threshold
         self._attr_available = True
         self._attr_extra_state_attributes = {
             "starts_last_hour": starts,
-            "threshold": self.THRESHOLD_STARTS,
+            "threshold": threshold,
         }
         self.async_write_ha_state()
 
@@ -385,13 +415,10 @@ class AdditionHeaterActiveBinarySensor(_ComfortzoneAlarmBase):
 
     The whole point of running an exhaust-air heat pump is to *avoid*
     the COP-1 resistive heater. A few brief activations during defrost
-    or DHW boost are fine; running >500 W for more than 10 minutes is
-    worth surfacing so the user (or a controller) can check whether
-    capacity is exhausted or settings need adjusting.
+    or DHW boost are fine; sustained activation worth surfacing so the
+    user (or a controller) can react. Both the power threshold and the
+    duration are configurable via the options flow.
     """
-
-    POWER_THRESHOLD_W = 500
-    DURATION_THRESHOLD_S = 10 * 60
 
     def __init__(self, coordinator, entry):
         super().__init__(
@@ -402,6 +429,20 @@ class AdditionHeaterActiveBinarySensor(_ComfortzoneAlarmBase):
         )
         self._active_since: Optional[datetime] = None
 
+    def _power_threshold(self) -> float:
+        return float(_option(
+            self.entry,
+            CONF_ADDITION_POWER_THRESHOLD_W,
+            DEFAULT_ADDITION_POWER_THRESHOLD_W,
+        ))
+
+    def _duration_threshold(self) -> int:
+        return int(_option(
+            self.entry,
+            CONF_ADDITION_DURATION_THRESHOLD_S,
+            DEFAULT_ADDITION_DURATION_THRESHOLD_S,
+        ))
+
     @callback
     def _handle_coordinator_update(self) -> None:
         values = _coordinator_values(self.coordinator)
@@ -411,11 +452,13 @@ class AdditionHeaterActiveBinarySensor(_ComfortzoneAlarmBase):
             return
         addition_w = _read_float(values, CLEAR_TEXT_NAMES["ADDITION_POWER"]) or 0.0
         now = dt_util.utcnow()
-        if addition_w >= self.POWER_THRESHOLD_W:
+        power_threshold = self._power_threshold()
+        duration_threshold = self._duration_threshold()
+        if addition_w >= power_threshold:
             if self._active_since is None:
                 self._active_since = now
             elapsed = (now - self._active_since).total_seconds()
-            self._attr_is_on = elapsed >= self.DURATION_THRESHOLD_S
+            self._attr_is_on = elapsed >= duration_threshold
         else:
             self._active_since = None
             self._attr_is_on = False
@@ -427,20 +470,22 @@ class AdditionHeaterActiveBinarySensor(_ComfortzoneAlarmBase):
                 if self._active_since is not None
                 else 0
             ),
-            "duration_threshold_s": self.DURATION_THRESHOLD_S,
+            "power_threshold_w": power_threshold,
+            "duration_threshold_s": duration_threshold,
         }
         self.async_write_ha_state()
 
 
 class FilterChangeSoonBinarySensor(_ComfortzoneAlarmBase):
-    """Heads-up that the filter is due for replacement within a week.
+    """Heads-up that the filter is due for replacement within a configurable
+    number of days.
 
     The pump exposes a hard ``filter_alarm`` which only fires once the
     timer has hit zero. This soft warning gives users a chance to order
     a new filter and schedule the swap before being forced into it.
+    Default: 7 days, configurable via the options flow.
     """
 
-    DAYS_THRESHOLD = 7
     _attr_device_class = BinarySensorDeviceClass.PROBLEM
 
     def __init__(self, coordinator, entry):
@@ -450,6 +495,11 @@ class FilterChangeSoonBinarySensor(_ComfortzoneAlarmBase):
             name="Filter change due soon",
             icon="mdi:filter-clock",
         )
+
+    def _threshold_days(self) -> float:
+        return float(_option(
+            self.entry, CONF_FILTER_WARNING_DAYS, DEFAULT_FILTER_WARNING_DAYS
+        ))
 
     @callback
     def _handle_coordinator_update(self) -> None:
@@ -462,11 +512,12 @@ class FilterChangeSoonBinarySensor(_ComfortzoneAlarmBase):
         if days_left is None:
             self._attr_available = False
         else:
+            threshold = self._threshold_days()
             self._attr_available = True
-            self._attr_is_on = days_left <= self.DAYS_THRESHOLD
+            self._attr_is_on = days_left <= threshold
             self._attr_extra_state_attributes = {
                 "days_remaining": days_left,
-                "threshold_days": self.DAYS_THRESHOLD,
+                "threshold_days": threshold,
             }
         self.async_write_ha_state()
 
@@ -474,13 +525,12 @@ class FilterChangeSoonBinarySensor(_ComfortzoneAlarmBase):
 class LowHotWaterBinarySensor(_ComfortzoneAlarmBase):
     """Warns when the tank temperature is too low for a comfortable shower.
 
-    Trips at ``ON_THRESHOLD_C`` and clears at ``OFF_THRESHOLD_C`` to give
-    a stable signal that automations can act on (e.g. "if tank is low and
-    grid price is below average, kick off a hot-water boost").
+    Trips at the configured threshold and clears once the tank is back
+    above ``threshold + hysteresis`` to give a stable signal automations
+    can act on (e.g. "if tank is low and grid price is below average,
+    kick off a hot-water boost"). Defaults: 40 °C with 3 °C hysteresis,
+    both configurable via the options flow.
     """
-
-    ON_THRESHOLD_C = 40.0
-    OFF_THRESHOLD_C = 43.0
 
     def __init__(self, coordinator, entry):
         super().__init__(
@@ -489,6 +539,16 @@ class LowHotWaterBinarySensor(_ComfortzoneAlarmBase):
             name="Low hot water",
             icon="mdi:water-thermometer",
         )
+
+    def _on_threshold(self) -> float:
+        return float(_option(
+            self.entry, CONF_LOW_HW_THRESHOLD_C, DEFAULT_LOW_HW_THRESHOLD_C
+        ))
+
+    def _hysteresis(self) -> float:
+        return float(_option(
+            self.entry, CONF_LOW_HW_HYSTERESIS_C, DEFAULT_LOW_HW_HYSTERESIS_C
+        ))
 
     @callback
     def _handle_coordinator_update(self) -> None:
@@ -502,17 +562,18 @@ class LowHotWaterBinarySensor(_ComfortzoneAlarmBase):
             self._attr_available = False
             self.async_write_ha_state()
             return
+        on_c = self._on_threshold()
+        off_c = on_c + self._hysteresis()
         self._attr_available = True
         if self._attr_is_on:
-            # Only clear when we comfortably exceed the upper threshold
-            if tank_c >= self.OFF_THRESHOLD_C:
+            if tank_c >= off_c:
                 self._attr_is_on = False
         else:
-            if tank_c <= self.ON_THRESHOLD_C:
+            if tank_c <= on_c:
                 self._attr_is_on = True
         self._attr_extra_state_attributes = {
             "tank_temp_c": tank_c,
-            "on_threshold_c": self.ON_THRESHOLD_C,
-            "off_threshold_c": self.OFF_THRESHOLD_C,
+            "on_threshold_c": on_c,
+            "off_threshold_c": off_c,
         }
         self.async_write_ha_state()

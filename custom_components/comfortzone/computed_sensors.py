@@ -761,6 +761,30 @@ class HeatingRuntimeSensor(_RuntimeAccumulator):
         return _is_heating(values)
 
 
+class AdditionRuntimeSensor(_RuntimeAccumulator):
+    """Cumulative hours the resistive addition heater (`elpatron`) has been
+    drawing meaningful power.
+
+    Tracks any sample where ``Addition effect`` exceeds 100 W. Useful for
+    spotting periods when the heat pump alone wasn't enough and the COP-1
+    backup kicked in — every hour logged here is roughly 6 kWh of
+    expensive electricity.
+    """
+
+    ADDITION_THRESHOLD_W = 100.0
+
+    def __init__(self, coordinator, entry):
+        super().__init__(
+            coordinator, entry,
+            suffix="addition_heater_runtime",
+            name="Addition heater runtime",
+            icon="mdi:heating-coil",
+        )
+
+    def _is_active(self, values):
+        return _compute_addition_w(values) >= self.ADDITION_THRESHOLD_W
+
+
 class HotWaterRuntimeSensor(_RuntimeAccumulator):
     def __init__(self, coordinator, entry):
         super().__init__(
@@ -930,6 +954,158 @@ class TankDecayRateSensor(_ComfortzoneComputedBase):
         rate = (hw_temp - first_v) / delta_h  # negative = cooling
         self._attr_native_value = round(rate, 3)
         self._attr_available = True
+        self.async_write_ha_state()
+
+
+class TankHeatingRateSensor(_ComfortzoneComputedBase):
+    """How fast the hot water tank gains heat (°C / hour) while the pump
+    is actively producing hot water.
+
+    Mirror image of ``TankDecayRateSensor``. Useful for tracking tank
+    coil heat-transfer effectiveness over time — a drop here at constant
+    compressor load is a good early indicator of limescale or fouling.
+    """
+
+    _attr_state_class = SensorStateClass.MEASUREMENT
+    _attr_native_unit_of_measurement = "°C/h"
+    _attr_suggested_display_precision = 2
+
+    WINDOW_SECONDS = 15 * 60  # shorter window — HW production cycles are short
+
+    def __init__(self, coordinator, entry):
+        super().__init__(
+            coordinator, entry,
+            suffix="tank_heating_rate",
+            name="Tank heating rate",
+            icon="mdi:water-thermometer",
+            enabled_by_default=False,
+        )
+        self._samples: Deque[Tuple[datetime, float]] = deque()
+        self._attr_native_value: float | None = None
+
+    @callback
+    def _handle_coordinator_update(self) -> None:
+        values = _coordinator_values(self.coordinator)
+        if values is None:
+            return
+        now = dt_util.utcnow()
+        hw_temp = _read_float(values, CLEAR_TEXT_NAMES["HOT_WATER_TEMP"])
+        if hw_temp is None:
+            return
+
+        # Reset samples whenever HW production stops, so the next cycle
+        # starts with a clean baseline rather than averaging across an idle gap.
+        if not _is_hot_water(values):
+            self._samples.clear()
+            return
+
+        self._samples.append((now, hw_temp))
+        cutoff = now.timestamp() - self.WINDOW_SECONDS
+        while self._samples and self._samples[0][0].timestamp() < cutoff:
+            self._samples.popleft()
+
+        if len(self._samples) < 2:
+            return
+        first_t, first_v = self._samples[0]
+        delta_h = (now - first_t).total_seconds() / 3600.0
+        if delta_h <= 0.05:
+            return
+        rate = (hw_temp - first_v) / delta_h
+        self._attr_native_value = round(rate, 2)
+        self._attr_available = True
+        self.async_write_ha_state()
+
+
+class DhwProductionRateSensor(_ComfortzoneComputedBase):
+    """Thermal output power averaged over a short window while making
+    hot water (kW).
+
+    Proxies the heat pump's effective HW production capacity right now.
+    Drops over time on a fixed compressor load suggest fouling /
+    limescale on the tank coil.
+    """
+
+    _attr_state_class = SensorStateClass.MEASUREMENT
+    _attr_native_unit_of_measurement = UnitOfPower.KILO_WATT
+    _attr_device_class = SensorDeviceClass.POWER
+    _attr_suggested_display_precision = 2
+
+    WINDOW_SECONDS = 5 * 60
+
+    def __init__(self, coordinator, entry):
+        super().__init__(
+            coordinator, entry,
+            suffix="dhw_production_rate",
+            name="DHW production rate",
+            icon="mdi:water-boiler",
+            enabled_by_default=False,
+        )
+        self._samples: Deque[Tuple[datetime, float]] = deque()
+        self._attr_native_value: float | None = None
+
+    @callback
+    def _handle_coordinator_update(self) -> None:
+        values = _coordinator_values(self.coordinator)
+        if values is None:
+            return
+        if not _is_hot_water(values):
+            self._samples.clear()
+            return
+        thermal_w = _read_float(values, CLEAR_TEXT_NAMES["TOTAL_POWER"])
+        if thermal_w is None:
+            return
+        now = dt_util.utcnow()
+        self._samples.append((now, thermal_w))
+        cutoff = now.timestamp() - self.WINDOW_SECONDS
+        while self._samples and self._samples[0][0].timestamp() < cutoff:
+            self._samples.popleft()
+        if not self._samples:
+            return
+        avg_w = sum(v for _, v in self._samples) / len(self._samples)
+        self._attr_native_value = round(avg_w / 1000.0, 3)
+        self._attr_available = True
+        self.async_write_ha_state()
+
+
+class CompressorLoadPercentageSensor(_ComfortzoneComputedBase):
+    """Compressor load as a percentage of its inverter maximum frequency.
+
+    Computed live from ``Compressor frequency`` divided by
+    ``Compressor freq. max``. 0 % means idle, 100 % means the inverter
+    has no headroom left. A controller can use this to decide whether
+    raising the heat curve is even possible right now — if the
+    compressor is already at 100 % and indoor temp is below target,
+    the only remaining option is the resistive backup.
+    """
+
+    _attr_state_class = SensorStateClass.MEASUREMENT
+    _attr_native_unit_of_measurement = "%"
+    _attr_suggested_display_precision = 0
+
+    def __init__(self, coordinator, entry):
+        super().__init__(
+            coordinator, entry,
+            suffix="compressor_load_percentage",
+            name="Compressor load",
+            icon="mdi:speedometer",
+        )
+        self._attr_native_value: float | None = None
+
+    @callback
+    def _handle_coordinator_update(self) -> None:
+        values = _coordinator_values(self.coordinator)
+        if values is None:
+            self._attr_available = False
+            self.async_write_ha_state()
+            return
+        freq = _read_float(values, CLEAR_TEXT_NAMES["COMPRESSOR_FREQ"])
+        freq_max = _read_float(values, CLEAR_TEXT_NAMES["COMPRESSOR_FREQ_MAX"])
+        if freq is None or freq_max is None or freq_max <= 0:
+            self._attr_available = False
+            self._attr_native_value = None
+        else:
+            self._attr_native_value = round((freq / freq_max) * 100, 1)
+            self._attr_available = True
         self.async_write_ha_state()
 
 
@@ -1120,11 +1296,15 @@ def build_computed_sensors(
         # Per-mode runtime
         HeatingRuntimeSensor(coordinator, entry),
         HotWaterRuntimeSensor(coordinator, entry),
+        AdditionRuntimeSensor(coordinator, entry),
         # Diagnostics on the heating and hot-water loops
         HeatingCircuitDeltaTSensor(coordinator, entry),
         HotWaterLoopDeltaTSensor(coordinator, entry),
         # Tank dynamics & house thermal performance
         TankDecayRateSensor(coordinator, entry),
+        TankHeatingRateSensor(coordinator, entry),
+        DhwProductionRateSensor(coordinator, entry),
+        CompressorLoadPercentageSensor(coordinator, entry),
         SpecificHeatingEnergySensor(coordinator, entry),
         # Diagnostics: night fan schedule
         ReducedFanScheduleSensor(coordinator, entry, "weekdays"),

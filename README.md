@@ -156,7 +156,11 @@ flowchart LR
 | `binary_sensor.comfortzone_compressor_short_cycling` | Larm — kompressorn startar >6 gånger på 1h |
 | `binary_sensor.comfortzone_addition_heater_active` | Larm — tillskott (elpatron) >500W i mer än 10 min |
 | `binary_sensor.comfortzone_filter_change_due_soon` | Förvarning — <7 dagar kvar till filterbyte |
-| `binary_sensor.comfortzone_low_hot_water` | Larm — VV-tank <40°C (släpper vid >43°C, hysteres) |
+| `binary_sensor.comfortzone_low_hot_water` | Larm — VV-tank under tröskel (default 40°C, hysteres 3°C; båda konfigurerbara) |
+| `sensor.comfortzone_addition_heater_runtime` | Total drifttid tillskott (h) — räknar samples >100 W |
+| `sensor.comfortzone_dhw_production_rate` | Termisk kW under VV-produktion (5-min snitt). Av som standard |
+| `sensor.comfortzone_tank_heating_rate` | °C/h under VV-laddning (motsvarighet till tank_decay_rate). Av som standard |
+| `sensor.comfortzone_compressor_load_percentage` | Aktuell kompressor-belastning (frekvens / max-frekvens × 100) |
 | `sensor.comfortzone_tank_decay_rate` | Hur snabbt VV-tanken tappar °C/h vid idle |
 | `sensor.comfortzone_specific_heating_energy` | kWh per °C inomhus-höjning (EMA) |
 | `sensor.comfortzone_reduced_fan_weekdays_schedule` | Diagnostik: fläktreduktions­schema veckodagar |
@@ -183,6 +187,11 @@ flowchart LR
 | **Electricity price entity** | Entitets-ID för Nord Pool/elpris-sensor. Krävs för kostnadssensorerna. |
 | **Price reports öre/kWh** | **Avstängd som default.** Den moderna officiella Nord Pool-integrationen i HA rapporterar redan i lokal valuta (`SEK/kWh` för SE3) — låt switchen vara av. Aktivera bara om din prissensor rapporterar i öre/kWh (gammal mall-baserad uppsättning). |
 | **Compressor factor override** | `0` (default) = använd den valda **modellens** EN255 spec-kurva. För `RX95` är kurvan 0,235 vid 35°C → 0,314 vid 50°C framledning (datablad). För `Other` används en generisk fallback (0,30 ≈ COP 3,3). Sätt ett värde t.ex. `0,4` om du vill ange en konstant konservativ faktor. |
+| **Short-cycling threshold** | Standard `6` starter/timme. Kortcykling-larmet aktiveras vid eller över. |
+| **Addition power threshold** | Standard `500` W. Sample under detta räknas som "av". |
+| **Addition duration threshold** | Standard `600` s (10 min). Sammanhängande tid över power-tröskeln innan tillskott-larmet aktiveras. |
+| **Filter warning days** | Standard `7` dagar kvar för förvarningen. |
+| **Low HW threshold + hysteresis** | Standard `40` °C tröskel + `3` °C hysteres → larm aktiveras < 40 °C, släpper > 43 °C. |
 
 ---
 
