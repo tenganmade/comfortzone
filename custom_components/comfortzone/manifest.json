@@ -1,14 +1,14 @@
 {
   "domain": "comfortzone",
   "name": "Comfortzone Heat Pump",
-  "documentation": "https://github.com/tenganmade/comfortzone",
+  "documentation": "https://github.com/tengmo-ab/comfortzone",
   "dependencies": [],
-  "codeowners": ["@tenganmade"],
+  "codeowners": ["@tengmo-ab"],
   "requirements": [],
   "iot_class": "cloud_polling",
   "integration_type": "device",
   "version": "2.4.0",
   "config_flow": true,
   "quality_scale": "silver",
-  "issue_tracker": "https://github.com/tenganmade/comfortzone/issues"
+  "issue_tracker": "https://github.com/tengmo-ab/comfortzone/issues"
 }

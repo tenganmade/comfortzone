@@ -37,7 +37,7 @@
 
 ### Steg 1 — Lägg till repot i HACS (one-click)
 
-[![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=tenganmade&repository=comfortzone&category=integration)
+[![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=tengmo-ab&repository=comfortzone&category=integration)
 
 > 💡 **Klicka på knappen ovan** för att öppna HACS direkt i din Home Assistant och förhandsgranska repot. Klicka därefter på **DOWNLOAD**.
 
@@ -46,7 +46,7 @@
 
 1. Öppna **HACS** i Home Assistant.
 2. Klicka på **⋮** (tre prickar) uppe till höger → **Custom repositories**.
-3. Klistra in `https://github.com/tenganmade/comfortzone` och välj kategori **Integration**.
+3. Klistra in `https://github.com/tengmo-ab/comfortzone` och välj kategori **Integration**.
 4. Klicka på **ADD**, sök sedan upp *Comfortzone Heat Pump* i listan och tryck **DOWNLOAD**.
 5. **Starta om Home Assistant.**
 
@@ -214,7 +214,7 @@ flowchart LR
 
 ### Step 1 — Add repository to HACS
 
-[![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=tenganmade&repository=comfortzone&category=integration)
+[![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=tengmo-ab&repository=comfortzone&category=integration)
 
 > 💡 **Click the button above** to open HACS directly in your Home Assistant and preview the repository. Then click **DOWNLOAD**.
 
@@ -267,10 +267,10 @@ Inte affilierad med Comfortzone AB eller Loggamera AB.
 
 [hacs-badge]: https://img.shields.io/badge/HACS-Custom-41BDF5.svg?style=flat-square
 [hacs-url]: https://github.com/hacs/integration
-[version-badge]: https://img.shields.io/github/v/release/tenganmade/comfortzone?style=flat-square
-[release-url]: https://github.com/tenganmade/comfortzone/releases
-[license-badge]: https://img.shields.io/github/license/tenganmade/comfortzone?style=flat-square
-[license-url]: https://github.com/tenganmade/comfortzone/blob/main/LICENSE
+[version-badge]: https://img.shields.io/github/v/release/tengmo-ab/comfortzone?style=flat-square
+[release-url]: https://github.com/tengmo-ab/comfortzone/releases
+[license-badge]: https://img.shields.io/github/license/tengmo-ab/comfortzone?style=flat-square
+[license-url]: https://github.com/tengmo-ab/comfortzone/blob/main/LICENSE
 [ha-badge]: https://img.shields.io/badge/Home%20Assistant-2024.10%2B-41BDF5.svg?style=flat-square&logo=home-assistant
 [ha-url]: https://www.home-assistant.io/
-[issues-url]: https://github.com/tenganmade/comfortzone/issues
+[issues-url]: https://github.com/tengmo-ab/comfortzone/issues
