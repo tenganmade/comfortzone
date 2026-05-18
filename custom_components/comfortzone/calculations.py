@@ -21,9 +21,13 @@ from typing import Any, Iterable, Optional
 from .const import (
     CIRCULATION_PUMP_MAX_W,
     CLEAR_TEXT_NAMES,
+    COP_REFERENCE_OUTDOOR_C,
     DEFAULT_GENERIC_FACTOR,
+    DEFROST_ELECTRICAL_W,
     FAN_MAX_W,
     MODEL_COP_CURVES,
+    OUTDOOR_COP_PENALTY_MAX,
+    OUTDOOR_COP_PENALTY_PER_DEG_C,
 )
 
 DEFAULT_MODEL = "RX95"
@@ -89,6 +93,27 @@ def compressor_factor_from_flow(
     return curve["factor_low"] + pos * (curve["factor_high"] - curve["factor_low"])
 
 
+def outdoor_temp_factor_adjustment(outdoor_c: Optional[float]) -> float:
+    """Return a multiplier on the EN255 spec factor for cold outdoor air.
+
+    Spec figures assume the reference condition (20°C indoor / 12°C wet
+    outdoor). At colder outdoor temperatures the COP drops by roughly
+    4% per °C below the reference, which translates to the electrical
+    input rising by the same amount. The multiplier is clamped:
+      - 1.0 at or above the reference temperature (no penalty)
+      - up to 1 + OUTDOOR_COP_PENALTY_MAX for very cold air
+    """
+    if outdoor_c is None:
+        return 1.0
+    delta = COP_REFERENCE_OUTDOOR_C - outdoor_c  # > 0 when colder than reference
+    if delta <= 0:
+        return 1.0
+    return min(
+        1.0 + OUTDOOR_COP_PENALTY_PER_DEG_C * delta,
+        1.0 + OUTDOOR_COP_PENALTY_MAX,
+    )
+
+
 def compute_compressor_electrical_w(
     values: Optional[Iterable[Any]],
     override_factor: float,
@@ -99,14 +124,25 @@ def compute_compressor_electrical_w(
     A non-zero ``override_factor`` bypasses the model's spec curve and uses
     that constant factor — useful when the user has empirical measurements
     or wants to be conservative (e.g. 0.4 for a hand-tuned safety margin).
+
+    During a defrost cycle the thermal output reading collapses while the
+    compressor is still drawing current, so we fall back to a flat
+    estimate (``DEFROST_ELECTRICAL_W``) rather than the thermal × factor
+    pipeline. Outside defrost, the spec-curve factor is multiplied by a
+    cold-outdoor penalty so the estimate stays believable at sub-zero
+    air temperatures.
     """
+    if is_defrosting(values):
+        return DEFROST_ELECTRICAL_W
     thermal = read_float(values, CLEAR_TEXT_NAMES["COMPRESSOR_POWER"])
     if thermal is None:
         return None
     if override_factor and override_factor > 0:
         return thermal * override_factor
     flow_c = read_float(values, CLEAR_TEXT_NAMES["FLOW_TEMP"])
-    return thermal * compressor_factor_from_flow(flow_c, model)
+    base_factor = compressor_factor_from_flow(flow_c, model)
+    outdoor_c = read_float(values, CLEAR_TEXT_NAMES["OUTDOOR_TEMP"])
+    return thermal * base_factor * outdoor_temp_factor_adjustment(outdoor_c)
 
 
 def compute_circulation_pump_w(values: Optional[Iterable[Any]]) -> float:

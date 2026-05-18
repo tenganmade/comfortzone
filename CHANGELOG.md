@@ -3,6 +3,30 @@
 All notable changes to the Comfortzone Heat Pump integration are documented here.
 This project uses [Semantic Versioning](https://semver.org/).
 
+## [2.8.0] – 2026-05-18
+
+### Changed — electrical-input estimation recalibrated
+Real-world observations showed the per-mode power/energy/cost sensors
+under-counting by ~0.4–0.7 kWh/h during sustained heat-pump operation
+on cold nights. Root causes: the EN255 datasheet COP figures assume
+ideal lab conditions (12 °C wet outdoor air), defrost cycles bypass the
+thermal × factor pipeline entirely, and the controller's standby draw
+was set too low. Three calibrations land in this release:
+
+- **Cold-outdoor COP penalty.** The base spec-curve factor is now
+  multiplied by `1 + 0.04 × (12 − outdoor_°C)` (capped at +60 %) when
+  the air is colder than the EN255 reference temperature. At
+  −5 °C outside this raises the estimate by ~68 %; at +12 °C or warmer
+  it is a no-op. Override factor still bypasses this when set.
+- **Defrost flat estimate.** When the pump enters a defrost cycle
+  (compressor running, both exchange valves closed) the integration
+  now reports a flat 1500 W electrical estimate instead of using the
+  near-zero thermal reading.
+- **Standby bumped from 15 W to 25 W** to better match real-world
+  controller + PCB + sensor draw on RX95.
+
+Six new pytest cases cover the new behaviour (47 total, all green).
+
 ## [2.7.0] – 2026-05-08
 
 ### Added

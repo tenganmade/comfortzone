@@ -70,10 +70,30 @@ DEFAULT_GENERIC_FACTOR = 0.30
 CIRCULATION_PUMP_MAX_W = 75
 FAN_MAX_W = 83
 # Constant standby draw of the controller, fan PCB, sensors etc.
-STANDBY_W = 15
+# Bumped from 15 → 25 in 2.8.0 after observing systematic under-tracking
+# in the Home Assistant Energy panel during quiet hours.
+STANDBY_W = 25
 # Minimum estimated electrical input (W) below which COP becomes too noisy
 # to report meaningfully. Keeps the instant COP sensor sane near idle.
 MIN_ELECTRICAL_FOR_COP_W = 100
+
+# Real-world calibration on top of the EN255 spec curve.
+# The datasheet COP figures assume the standardised reference condition
+# (20°C indoor / 12°C wet outdoor air). At colder outdoor temperatures the
+# evaporator runs colder, the pressure ratio rises and the COP drops.
+# Empirical rule-of-thumb for inverter-driven exhaust-air pumps: COP drops
+# roughly 4% per °C below the reference. We translate this into a
+# multiplier on the electrical-input factor (≥ 1.0, capped at 1.6).
+COP_REFERENCE_OUTDOOR_C = 12.0
+OUTDOOR_COP_PENALTY_PER_DEG_C = 0.04
+OUTDOOR_COP_PENALTY_MAX = 0.60  # i.e. multiplier capped at 1.60
+
+# During a defrost cycle the compressor keeps running but thermal output to
+# the heating loop is briefly negative (cycle is reversed) — the reported
+# Compressor effect drops toward zero while electrical input does not.
+# Use a flat estimate during these short windows instead of leaning on the
+# thermal × factor pipeline.
+DEFROST_ELECTRICAL_W = 1500
 
 # Target temp value used to signify "OFF" mode for the climate entity
 TEMP_VALUE_FOR_OFF = 10.0
